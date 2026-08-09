@@ -35,7 +35,7 @@ h2 {
     margin-top: 20px;
 }
 
-.message {
+#message {
     text-align: center;
     margin-top: 15px;
     font-weight: bold;
@@ -46,7 +46,6 @@ h2 {
 
 </head>
 
-
 <body>
 
 <div class="container">
@@ -55,55 +54,77 @@ h2 {
 
 <div id="reader"></div>
 
-<div class="message" id="message">
+<div id="message">
 Starting camera...
 </div>
 
 </div>
 
-
 <script>
-
-/*
-====================================================
-CREATE QR SCANNER
-====================================================
-*/
 
 const scanner = new Html5Qrcode("reader");
 
 
 /*
 ====================================================
-WHEN QR IS SCANNED
+READ SCANNER MODE
+====================================================
+*/
+
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
+
+const scanType =
+    params.get("type") || "part";
+
+const existingPart =
+    params.get("part") || "";
+
+
+/*
+====================================================
+SHOW MODE
+====================================================
+*/
+
+if (scanType === "tray") {
+
+    document.getElementById("message").innerHTML =
+        "📦 SCAN TRAY QR";
+
+} else {
+
+    document.getElementById("message").innerHTML =
+        "📷 SCAN PART QR";
+
+}
+
+
+/*
+====================================================
+QR SUCCESS
 ====================================================
 */
 
 function onScanSuccess(decodedText) {
 
-    var scannedValue = decodedText.trim();
+    const scannedValue =
+        decodedText.trim();
 
 
     document.getElementById("message").innerHTML =
         "Scanned: " + scannedValue;
 
 
-    /*
-    Stop camera before leaving page
-    */
-
     scanner.stop().then(function() {
 
-        redirectAfterScan(scannedValue);
+        redirect(scannedValue);
 
     }).catch(function() {
 
-        /*
-        Even if stopping the camera fails,
-        continue with the redirect.
-        */
-
-        redirectAfterScan(scannedValue);
+        redirect(scannedValue);
 
     });
 
@@ -112,107 +133,84 @@ function onScanSuccess(decodedText) {
 
 /*
 ====================================================
-DECIDE WHERE TO RETURN AFTER SCAN
+REDIRECT
 ====================================================
 */
 
-function redirectAfterScan(scannedValue) {
+function redirect(scannedValue) {
 
-
-    /*
-    Get parameters from scanner URL
-    */
-
-    var params =
-        new URLSearchParams(
-            window.location.search
-        );
-
-
-    /*
-    type = part OR tray
-    */
-
-    var scanType =
-        params.get("type") || "part";
-
-
-    /*
-    YOUR APPS SCRIPT WEB APP
-    */
-
-    var appURL =
-        "https://script.google.com/macros/s/AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA/exec";
+    const appURL =
+        "https://script.google.com/macros/s/" +
+        "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+        "/exec";
 
 
     /*
     ================================================
-    PART QR SCAN
+    PART
     ================================================
     */
 
     if (scanType === "part") {
 
-        window.location.href =
+        const url =
             appURL +
             "?page=supply" +
             "&part=" +
             encodeURIComponent(scannedValue);
 
-        return;
+        window.location.href = url;
 
+        return;
     }
 
 
     /*
     ================================================
-    TRAY QR SCAN
+    TRAY
     ================================================
     */
 
     if (scanType === "tray") {
 
-
-        /*
-        Get the Part Number that was already scanned
-        */
-
-        var part =
-            params.get("part") || "";
-
-
-        /*
-        Return both values to Supply Page
-        */
-
-        window.location.href =
+        const url =
             appURL +
             "?page=supply" +
             "&part=" +
-            encodeURIComponent(part) +
+            encodeURIComponent(existingPart) +
             "&tray=" +
             encodeURIComponent(scannedValue);
 
-        return;
 
+        /*
+        IMPORTANT:
+        Show the URL so we can verify it
+        */
+
+        document.getElementById("message").innerHTML =
+            "Returning...<br><br>" +
+            url;
+
+
+        setTimeout(function() {
+
+            window.location.href = url;
+
+        }, 500);
+
+        return;
     }
 
 
-    /*
-    ================================================
-    UNKNOWN SCAN TYPE
-    ================================================
-    */
-
     document.getElementById("message").innerHTML =
-        "❌ Unknown scanner type.";
+        "❌ Unknown scan type.";
 
 }
 
 
 /*
 ====================================================
-GET AVAILABLE CAMERAS
+START CAMERA
 ====================================================
 */
 
@@ -220,35 +218,18 @@ Html5Qrcode.getCameras()
 
 .then(function(cameras) {
 
-
     if (!cameras || cameras.length === 0) {
 
         document.getElementById("message").innerHTML =
             "❌ No camera found.";
 
         return;
-
     }
 
 
-    /*
-    Use first available camera.
-
-    We do NOT force "environment" or
-    "user", so this works with:
-
-    - Laptop webcam
-    - Android
-    - iPhone
-    */
-
-    var cameraId =
+    const cameraId =
         cameras[0].id;
 
-
-    /*
-    START CAMERA
-    */
 
     scanner.start(
 
@@ -267,37 +248,21 @@ Html5Qrcode.getCameras()
 
     )
 
-
     .then(function() {
-
-        /*
-        Display appropriate instruction
-        */
-
-        var params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-
-        var scanType =
-            params.get("type") || "part";
-
 
         if (scanType === "tray") {
 
             document.getElementById("message").innerHTML =
-                "📦 Point the camera at the Tray QR";
+                "📦 Point camera at TRAY QR";
 
         } else {
 
             document.getElementById("message").innerHTML =
-                "📷 Point the camera at the Part QR";
+                "📷 Point camera at PART QR";
 
         }
 
     })
-
 
     .catch(function(error) {
 
@@ -307,7 +272,6 @@ Html5Qrcode.getCameras()
     });
 
 })
-
 
 .catch(function(error) {
 
