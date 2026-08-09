@@ -5,19 +5,12 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>RRP QR Scanner</title>
+<title>RRP QR Scanner - TEST</title>
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
 <style>
-<div id="version"
-     style="text-align:center;
-            background:#000;
-            color:#fff;
-            padding:10px;
-            font-weight:bold;">
-    RRP SCANNER VERSION 2026-08-09-TEST-01
-</div>
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -31,6 +24,17 @@ body {
     background: white;
     padding: 20px;
     border-radius: 12px;
+}
+
+.version {
+    background: black;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    margin-bottom: 15px;
 }
 
 h2 {
@@ -47,6 +51,15 @@ h2 {
     margin-top: 15px;
     font-weight: bold;
     word-break: break-word;
+    line-height: 1.6;
+}
+
+.debug {
+    margin-top: 15px;
+    padding: 12px;
+    background: #eeeeee;
+    border-radius: 6px;
+    word-break: break-all;
 }
 
 </style>
@@ -58,12 +71,20 @@ h2 {
 
 <div class="container">
 
+<div class="version">
+RRP SCANNER TEST VERSION 001
+</div>
+
 <h2>RRP QR SCANNER</h2>
 
 <div id="reader"></div>
 
 <div id="message">
 Starting camera...
+</div>
+
+<div class="debug" id="debug">
+Waiting for scanner...
 </div>
 
 </div>
@@ -77,42 +98,93 @@ READ CURRENT URL
 ====================================================
 */
 
+const currentURL =
+    new URL(window.location.href);
+
 const params =
-    new URLSearchParams(
-        window.location.search
-    );
+    currentURL.searchParams;
 
 
 /*
 ====================================================
-GET SCAN INFORMATION
+READ PARAMETERS
 ====================================================
 */
+
+const typeParameter =
+    params.get("type") || "";
 
 const existingPart =
     params.get("part") || "";
 
-const scanType =
-    existingPart.trim() !== ""
-        ? "tray"
-        : "part";
+const versionParameter =
+    params.get("v") || "";
 
 
 /*
 ====================================================
-DISPLAY SCAN MODE
+DETERMINE MODE
+====================================================
+*/
+
+let scanType = "part";
+
+if (existingPart.trim() !== "") {
+
+    scanType = "tray";
+
+}
+
+
+/*
+====================================================
+DISPLAY DEBUG INFORMATION
+====================================================
+*/
+
+document.getElementById("debug").innerHTML =
+
+    "<b>LIVE FILE TEST</b><br><br>" +
+
+    "Current URL:<br>" +
+    currentURL.href +
+    "<br><br>" +
+
+    "Version parameter: " +
+    (versionParameter || "none") +
+    "<br><br>" +
+
+    "Type parameter: " +
+    (typeParameter || "none") +
+    "<br><br>" +
+
+    "Part parameter: " +
+    (existingPart || "none") +
+    "<br><br>" +
+
+    "Detected mode: " +
+    "<b>" +
+    scanType.toUpperCase() +
+    "</b>";
+
+
+/*
+====================================================
+SHOW MODE
 ====================================================
 */
 
 if (scanType === "tray") {
 
     document.getElementById("message").innerHTML =
-        "📦 POINT CAMERA AT TRAY QR";
+        "📦 <b>TRAY QR MODE</b><br><br>" +
+        "Part: " +
+        existingPart;
 
 } else {
 
     document.getElementById("message").innerHTML =
-        "📷 POINT CAMERA AT PART QR";
+        "📷 <b>PART QR MODE</b>";
 
 }
 
@@ -129,7 +201,7 @@ const scanner =
 
 /*
 ====================================================
-QR SCANNED
+QR SCAN SUCCESS
 ====================================================
 */
 
@@ -140,125 +212,40 @@ function onScanSuccess(decodedText) {
 
 
     /*
-    ================================================
-    PART SCAN
-    ================================================
-    */
-
-    if (scanType === "part") {
-
-        document.getElementById("message").innerHTML =
-            "✅ Part QR scanned: " +
-            scannedValue +
-            "<br><br>Loading...";
-
-
-        scanner.stop().catch(function() {});
-
-
-        const partURL =
-            "https://script.google.com/macros/s/" +
-            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
-            "/exec?page=supply" +
-            "&part=" +
-            encodeURIComponent(scannedValue);
-
-
-        setTimeout(function() {
-
-            window.location.href =
-                partURL;
-
-        }, 500);
-
-
-        return;
-    }
-
-
-    /*
-    ================================================
-    TRAY SCAN
-    ================================================
-    */
-
-    if (scanType === "tray") {
-
-
-        /*
-        Make sure existing part exists
-        */
-
-        if (!existingPart) {
-
-            document.getElementById("message").innerHTML =
-                "❌ Existing Part Number is missing.";
-
-            return;
-
-        }
-
-
-        /*
-        Stop camera
-        */
-
-        scanner.stop().catch(function() {});
-
-
-        /*
-        Build FINAL URL
-        */
-
-        const trayURL =
-            "https://script.google.com/macros/s/" +
-            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
-            "/exec?page=supply" +
-            "&part=" +
-            encodeURIComponent(existingPart) +
-            "&tray=" +
-            encodeURIComponent(scannedValue);
-
-
-        /*
-        SHOW URL FOR TESTING
-        */
-
-        document.getElementById("message").innerHTML =
-            "✅ TRAY QR SCANNED" +
-            "<br><br>" +
-            "Tray: <b>" +
-            scannedValue +
-            "</b>" +
-            "<br><br>" +
-            "Returning to Supply Page...";
-
-
-        /*
-        REDIRECT
-        */
-
-        setTimeout(function() {
-
-            window.location.href =
-                trayURL;
-
-        }, 700);
-
-
-        return;
-
-    }
-
-
-    /*
-    ================================================
-    UNKNOWN
-    ================================================
+    DO NOT REDIRECT.
+    ONLY SHOW THE RESULT.
     */
 
     document.getElementById("message").innerHTML =
-        "❌ Unknown scan type.";
+
+        "✅ QR SCANNED<br><br>" +
+
+        "QR VALUE:<br>" +
+        "<b>" +
+        scannedValue +
+        "</b>";
+
+
+    document.getElementById("debug").innerHTML =
+
+        "<b>SCAN RESULT</b><br><br>" +
+
+        "QR Value: " +
+        scannedValue +
+        "<br><br>" +
+
+        "Type parameter: " +
+        (typeParameter || "none") +
+        "<br><br>" +
+
+        "Part parameter: " +
+        (existingPart || "none") +
+        "<br><br>" +
+
+        "Detected mode: " +
+        "<b>" +
+        scanType.toUpperCase() +
+        "</b>";
 
 }
 
@@ -309,28 +296,26 @@ Html5Qrcode.getCameras()
 
     )
 
-
     .then(function() {
 
         if (scanType === "tray") {
 
             document.getElementById("message").innerHTML =
-                "📦 POINT CAMERA AT TRAY QR";
+                "📦 Point the camera at the TRAY QRRRR";
 
         } else {
 
             document.getElementById("message").innerHTML =
-                "📷 POINT CAMERA AT PART QR";
+                "📷 Point the camera at the PART QRRRRRRR";
 
         }
 
     })
 
-
     .catch(function(error) {
 
         document.getElementById("message").innerHTML =
-            "❌ Camera error: " +
+            "❌ Camera error:<br>" +
             error;
 
     });
@@ -341,7 +326,7 @@ Html5Qrcode.getCameras()
 .catch(function(error) {
 
     document.getElementById("message").innerHTML =
-        "❌ Unable to access camera: " +
+        "❌ Unable to access camera:<br>" +
         error;
 
 });
