@@ -39,6 +39,7 @@ h2 {
     text-align: center;
     margin-top: 15px;
     font-weight: bold;
+    word-break: break-word;
 }
 
 </style>
@@ -50,7 +51,7 @@ h2 {
 
 <div class="container">
 
-<h2>RRP PART QR SCANNER</h2>
+<h2>RRP QR SCANNER</h2>
 
 <div id="reader"></div>
 
@@ -63,34 +64,148 @@ Starting camera...
 
 <script>
 
+/*
+====================================================
+CREATE QR SCANNER
+====================================================
+*/
+
 const scanner = new Html5Qrcode("reader");
 
 
+/*
+====================================================
+WHEN QR IS SCANNED
+====================================================
+*/
+
 function onScanSuccess(decodedText) {
 
-    var internalPart = decodedText.trim();
+    var scannedValue = decodedText.trim();
+
 
     document.getElementById("message").innerHTML =
-        "Scanned: " + internalPart;
+        "Scanned: " + scannedValue;
 
+
+    /*
+    Stop camera before leaving page
+    */
 
     scanner.stop().then(function() {
 
-        var appURL =
-            "https://script.google.com/macros/s/AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA/exec";
+        redirectAfterScan(scannedValue);
 
+    }).catch(function() {
+
+        /*
+        Even if stopping the camera fails,
+        continue with the redirect.
+        */
+
+        redirectAfterScan(scannedValue);
+
+    });
+
+}
+
+
+/*
+====================================================
+DECIDE WHERE TO RETURN AFTER SCAN
+====================================================
+*/
+
+function redirectAfterScan(scannedValue) {
+
+
+    /*
+    Get parameters from scanner URL
+    */
+
+    var params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    /*
+    type = part OR tray
+    */
+
+    var scanType =
+        params.get("type") || "part";
+
+
+    /*
+    YOUR APPS SCRIPT WEB APP
+    */
+
+    var appURL =
+        "https://script.google.com/macros/s/AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA/exec";
+
+
+    /*
+    ================================================
+    PART QR SCAN
+    ================================================
+    */
+
+    if (scanType === "part") {
 
         window.location.href =
             appURL +
-            "?page=supply&part=" +
-            encodeURIComponent(internalPart);
+            "?page=supply" +
+            "&part=" +
+            encodeURIComponent(scannedValue);
 
-    }).catch(function(error) {
+        return;
 
-        document.getElementById("message").innerHTML =
-            "Scanned: " + internalPart;
+    }
 
-    });
+
+    /*
+    ================================================
+    TRAY QR SCAN
+    ================================================
+    */
+
+    if (scanType === "tray") {
+
+
+        /*
+        Get the Part Number that was already scanned
+        */
+
+        var part =
+            params.get("part") || "";
+
+
+        /*
+        Return both values to Supply Page
+        */
+
+        window.location.href =
+            appURL +
+            "?page=supply" +
+            "&part=" +
+            encodeURIComponent(part) +
+            "&tray=" +
+            encodeURIComponent(scannedValue);
+
+        return;
+
+    }
+
+
+    /*
+    ================================================
+    UNKNOWN SCAN TYPE
+    ================================================
+    */
+
+    document.getElementById("message").innerHTML =
+        "❌ Unknown scanner type.";
 
 }
 
@@ -105,6 +220,7 @@ Html5Qrcode.getCameras()
 
 .then(function(cameras) {
 
+
     if (!cameras || cameras.length === 0) {
 
         document.getElementById("message").innerHTML =
@@ -116,12 +232,23 @@ Html5Qrcode.getCameras()
 
 
     /*
-    Use the first available camera.
-    This avoids forcing environment/user-facing.
+    Use first available camera.
+
+    We do NOT force "environment" or
+    "user", so this works with:
+
+    - Laptop webcam
+    - Android
+    - iPhone
     */
 
-    var cameraId = cameras[0].id;
+    var cameraId =
+        cameras[0].id;
 
+
+    /*
+    START CAMERA
+    */
 
     scanner.start(
 
@@ -140,12 +267,37 @@ Html5Qrcode.getCameras()
 
     )
 
+
     .then(function() {
 
-        document.getElementById("message").innerHTML =
-            "Point the camera at the Part QR";
+        /*
+        Display appropriate instruction
+        */
+
+        var params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        var scanType =
+            params.get("type") || "part";
+
+
+        if (scanType === "tray") {
+
+            document.getElementById("message").innerHTML =
+                "📦 Point the camera at the Tray QR";
+
+        } else {
+
+            document.getElementById("message").innerHTML =
+                "📷 Point the camera at the Part QR";
+
+        }
 
     })
+
 
     .catch(function(error) {
 
