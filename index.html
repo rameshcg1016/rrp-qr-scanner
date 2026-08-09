@@ -66,16 +66,7 @@ Starting camera...
 
 /*
 ====================================================
-CREATE SCANNER
-====================================================
-*/
-
-const scanner = new Html5Qrcode("reader");
-
-
-/*
-====================================================
-READ URL PARAMETERS
+READ CURRENT URL
 ====================================================
 */
 
@@ -87,9 +78,12 @@ const params =
 
 /*
 ====================================================
-GET EXISTING PART
+GET SCAN INFORMATION
 ====================================================
 */
+
+const scanType =
+    params.get("type") || "part";
 
 const existingPart =
     params.get("part") || "";
@@ -97,129 +91,43 @@ const existingPart =
 
 /*
 ====================================================
-DETERMINE SCAN MODE
-====================================================
-
-NO PART PARAMETER
-    = PART SCAN
-
-PART PARAMETER EXISTS
-    = TRAY SCAN
-
-====================================================
-*/
-
-const scanType =
-    existingPart !== ""
-        ? "tray"
-        : "part";
-
-
-/*
-====================================================
-SHOW SCANNER MODE
+DISPLAY SCAN MODE
 ====================================================
 */
 
 if (scanType === "tray") {
 
     document.getElementById("message").innerHTML =
-        "📦 Point camera at TRAY QR";
+        "📦 POINT CAMERA AT TRAY QR";
 
 } else {
 
     document.getElementById("message").innerHTML =
-        "📷 Point camera at PART QR";
+        "📷 POINT CAMERA AT PART QR";
 
 }
 
 
 /*
 ====================================================
-QR SCAN SUCCESS
+CREATE SCANNER
+====================================================
+*/
+
+const scanner =
+    new Html5Qrcode("reader");
+
+
+/*
+====================================================
+QR SCANNED
 ====================================================
 */
 
 function onScanSuccess(decodedText) {
 
-    const scannedValue = decodedText.trim();
-
-    const currentURL =
-        new URL(window.location.href);
-
-    const currentType =
-        currentURL.searchParams.get("type");
-
-    const currentPart =
-        currentURL.searchParams.get("part");
-
-    document.getElementById("message").innerHTML =
-        "QR SCANNED<br><br>" +
-        "QR VALUE: <b>" + scannedValue + "</b><br><br>" +
-        "TYPE: <b>" + currentType + "</b><br>" +
-        "PART: <b>" + currentPart + "</b>";
-
-    /*
-    DO NOT REDIRECT YET
-    */
-
-    if (currentType === "tray") {
-
-        const trayURL =
-            "https://script.google.com/macros/s/" +
-            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
-            "/exec?page=supply" +
-            "&part=" +
-            encodeURIComponent(currentPart) +
-            "&tray=" +
-            encodeURIComponent(scannedValue);
-
-        document.getElementById("message").innerHTML +=
-            "<br><br>" +
-            "TRAY MODE DETECTED<br><br>" +
-            "RETURN URL:<br>" +
-            trayURL;
-
-        return;
-    }
-
-    /*
-    PART MODE
-    */
-
-    const partURL =
-        "https://script.google.com/macros/s/" +
-        "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
-        "/exec?page=supply" +
-        "&part=" +
-        encodeURIComponent(scannedValue);
-
-    document.getElementById("message").innerHTML +=
-        "<br><br>" +
-        "PART MODE DETECTED<br><br>" +
-        "RETURN URL:<br>" +
-        partURL;
-}
-
-/*
-====================================================
-REDIRECT AFTER SCAN
-====================================================
-*/
-
-function redirectAfterScan(scannedValue) {
-
-
-    /*
-    ================================================
-    APPS SCRIPT URL
-    ================================================
-    */
-
-    const appURL =
-        "https://script.google.com/macros/s/" +
-        "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
-        "/exec";
+    const scannedValue =
+        decodedText.trim();
 
 
     /*
@@ -230,17 +138,29 @@ function redirectAfterScan(scannedValue) {
 
     if (scanType === "part") {
 
+        document.getElementById("message").innerHTML =
+            "✅ Part QR scanned: " +
+            scannedValue +
+            "<br><br>Loading...";
+
+
+        scanner.stop().catch(function() {});
+
+
         const partURL =
-            appURL +
-            "?page=supply" +
+            "https://script.google.com/macros/s/" +
+            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+            "/exec?page=supply" +
             "&part=" +
-            encodeURIComponent(
-                scannedValue
-            );
+            encodeURIComponent(scannedValue);
 
 
-        window.location.href =
-            partURL;
+        setTimeout(function() {
+
+            window.location.href =
+                partURL;
+
+        }, 500);
 
 
         return;
@@ -257,13 +177,13 @@ function redirectAfterScan(scannedValue) {
 
 
         /*
-        Existing Part must be available
+        Make sure existing part exists
         */
 
         if (!existingPart) {
 
             document.getElementById("message").innerHTML =
-                "❌ Part number is missing.";
+                "❌ Existing Part Number is missing.";
 
             return;
 
@@ -271,35 +191,42 @@ function redirectAfterScan(scannedValue) {
 
 
         /*
-        Build Tray URL
+        Stop camera
         */
 
-        const trayURL =
-            appURL +
-            "?page=supply" +
-            "&part=" +
-            encodeURIComponent(
-                existingPart
-            ) +
-            "&tray=" +
-            encodeURIComponent(
-                scannedValue
-            );
+        scanner.stop().catch(function() {});
 
 
         /*
-        Show confirmation
+        Build FINAL URL
+        */
+
+        const trayURL =
+            "https://script.google.com/macros/s/" +
+            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+            "/exec?page=supply" +
+            "&part=" +
+            encodeURIComponent(existingPart) +
+            "&tray=" +
+            encodeURIComponent(scannedValue);
+
+
+        /*
+        SHOW URL FOR TESTING
         */
 
         document.getElementById("message").innerHTML =
-            "✅ Tray scanned: " +
+            "✅ TRAY QR SCANNED" +
+            "<br><br>" +
+            "Tray: <b>" +
             scannedValue +
+            "</b>" +
             "<br><br>" +
             "Returning to Supply Page...";
 
 
         /*
-        Redirect
+        REDIRECT
         */
 
         setTimeout(function() {
@@ -307,10 +234,11 @@ function redirectAfterScan(scannedValue) {
             window.location.href =
                 trayURL;
 
-        }, 500);
+        }, 700);
 
 
         return;
+
     }
 
 
@@ -321,7 +249,7 @@ function redirectAfterScan(scannedValue) {
     */
 
     document.getElementById("message").innerHTML =
-        "❌ Unknown scan mode.";
+        "❌ Unknown scan type.";
 
 }
 
@@ -337,10 +265,7 @@ Html5Qrcode.getCameras()
 .then(function(cameras) {
 
 
-    if (
-        !cameras ||
-        cameras.length === 0
-    ) {
+    if (!cameras || cameras.length === 0) {
 
         document.getElementById("message").innerHTML =
             "❌ No camera found.";
@@ -351,16 +276,12 @@ Html5Qrcode.getCameras()
 
 
     /*
-    Use first camera
+    Use first available camera
     */
 
     const cameraId =
         cameras[0].id;
 
-
-    /*
-    Start scanner
-    */
 
     scanner.start(
 
@@ -379,22 +300,23 @@ Html5Qrcode.getCameras()
 
     )
 
-    .then(function() {
 
+    .then(function() {
 
         if (scanType === "tray") {
 
             document.getElementById("message").innerHTML =
-                "📦 Point camera at TRAY QR";
+                "📦 POINT CAMERA AT TRAY QR";
 
         } else {
 
             document.getElementById("message").innerHTML =
-                "📷 Point camera at PART QR";
+                "📷 POINT CAMERA AT PART QR";
 
         }
 
     })
+
 
     .catch(function(error) {
 
