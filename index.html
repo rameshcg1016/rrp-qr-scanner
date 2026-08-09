@@ -142,30 +142,64 @@ QR SCAN SUCCESS
 
 function onScanSuccess(decodedText) {
 
-    const scannedValue =
-        decodedText.trim();
+    const scannedValue = decodedText.trim();
 
+    const currentURL =
+        new URL(window.location.href);
+
+    const currentType =
+        currentURL.searchParams.get("type");
+
+    const currentPart =
+        currentURL.searchParams.get("part");
+
+    document.getElementById("message").innerHTML =
+        "QR SCANNED<br><br>" +
+        "QR VALUE: <b>" + scannedValue + "</b><br><br>" +
+        "TYPE: <b>" + currentType + "</b><br>" +
+        "PART: <b>" + currentPart + "</b>";
 
     /*
-    Stop scanner
+    DO NOT REDIRECT YET
     */
 
-    scanner.stop()
+    if (currentType === "tray") {
 
-    .then(function() {
+        const trayURL =
+            "https://script.google.com/macros/s/" +
+            "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+            "/exec?page=supply" +
+            "&part=" +
+            encodeURIComponent(currentPart) +
+            "&tray=" +
+            encodeURIComponent(scannedValue);
 
-        redirectAfterScan(scannedValue);
+        document.getElementById("message").innerHTML +=
+            "<br><br>" +
+            "TRAY MODE DETECTED<br><br>" +
+            "RETURN URL:<br>" +
+            trayURL;
 
-    })
+        return;
+    }
 
-    .catch(function() {
+    /*
+    PART MODE
+    */
 
-        redirectAfterScan(scannedValue);
+    const partURL =
+        "https://script.google.com/macros/s/" +
+        "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+        "/exec?page=supply" +
+        "&part=" +
+        encodeURIComponent(scannedValue);
 
-    });
-
+    document.getElementById("message").innerHTML +=
+        "<br><br>" +
+        "PART MODE DETECTED<br><br>" +
+        "RETURN URL:<br>" +
+        partURL;
 }
-
 
 /*
 ====================================================
