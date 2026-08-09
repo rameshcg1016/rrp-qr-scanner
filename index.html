@@ -82,11 +82,13 @@ GET SCAN INFORMATION
 ====================================================
 */
 
-const scanType =
-    params.get("type") || "part";
-
 const existingPart =
     params.get("part") || "";
+
+const scanType =
+    existingPart.trim() !== ""
+        ? "tray"
+        : "part";
 
 
 /*
