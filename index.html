@@ -3,8 +3,7 @@
 
 <head>
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>RRP QR Scanner</title>
 
@@ -12,39 +11,40 @@
 
 <style>
 
-body{
-    font-family:Arial, sans-serif;
-    margin:0;
-    padding:20px;
-    background:#f2f2f2;
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f2f2f2;
 }
 
-.container{
-    max-width:500px;
-    margin:auto;
-    background:white;
-    padding:20px;
-    border-radius:12px;
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
 }
 
-h2{
-    text-align:center;
+h2 {
+    text-align: center;
 }
 
-#reader{
-    width:100%;
-    margin-top:20px;
+#reader {
+    width: 100%;
+    margin-top: 20px;
 }
 
-.message{
-    text-align:center;
-    margin-top:15px;
-    font-weight:bold;
+.message {
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
 }
 
 </style>
 
 </head>
+
 
 <body>
 
@@ -55,57 +55,112 @@ h2{
 <div id="reader"></div>
 
 <div class="message" id="message">
-Point the camera at the Part QR
+Starting camera...
 </div>
 
 </div>
+
 
 <script>
 
 const scanner = new Html5Qrcode("reader");
 
-function onScanSuccess(decodedText){
 
-    // QR must contain only Internal Part Number
+function onScanSuccess(decodedText) {
+
     var internalPart = decodedText.trim();
 
     document.getElementById("message").innerHTML =
         "Scanned: " + internalPart;
 
-    scanner.stop().then(function(){
 
-        // Your Apps Script Web App
+    scanner.stop().then(function() {
+
         var appURL =
-        "https://script.google.com/macros/s/AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA/exec";
+            "https://script.google.com/macros/s/AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA/exec";
 
-        // Return scanned Internal Part Number
+
         window.location.href =
             appURL +
             "?page=supply&part=" +
             encodeURIComponent(internalPart);
 
+    }).catch(function(error) {
+
+        document.getElementById("message").innerHTML =
+            "Scanned: " + internalPart;
+
     });
 
 }
 
-scanner.start(
 
-    { facingMode: "environment" },
+/*
+====================================================
+GET AVAILABLE CAMERAS
+====================================================
+*/
 
-    {
-        fps:10,
-        qrbox:{
-            width:250,
-            height:250
-        }
-    },
+Html5Qrcode.getCameras()
 
-    onScanSuccess
+.then(function(cameras) {
 
-).catch(function(error){
+    if (!cameras || cameras.length === 0) {
+
+        document.getElementById("message").innerHTML =
+            "❌ No camera found.";
+
+        return;
+
+    }
+
+
+    /*
+    Use the first available camera.
+    This avoids forcing environment/user-facing.
+    */
+
+    var cameraId = cameras[0].id;
+
+
+    scanner.start(
+
+        cameraId,
+
+        {
+            fps: 10,
+
+            qrbox: {
+                width: 250,
+                height: 250
+            }
+        },
+
+        onScanSuccess
+
+    )
+
+    .then(function() {
+
+        document.getElementById("message").innerHTML =
+            "Point the camera at the Part QR";
+
+    })
+
+    .catch(function(error) {
+
+        document.getElementById("message").innerHTML =
+            "❌ Camera error: " + error;
+
+    });
+
+})
+
+
+.catch(function(error) {
 
     document.getElementById("message").innerHTML =
-        "❌ Camera error: " + error;
+        "❌ Unable to access camera: " + error;
 
 });
 
