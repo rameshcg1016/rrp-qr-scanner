@@ -75,28 +75,44 @@ const scanner = new Html5Qrcode("reader");
 
 /*
 ====================================================
-GET SCANNER PARAMETERS
+READ URL PARAMETERS
 ====================================================
 */
 
-function getScanParameters() {
+const params =
+    new URLSearchParams(
+        window.location.search
+    );
 
-    const params =
-        new URLSearchParams(
-            window.location.search
-        );
 
-    return {
+/*
+====================================================
+GET EXISTING PART
+====================================================
+*/
 
-        type:
-            params.get("type") || "part",
+const existingPart =
+    params.get("part") || "";
 
-        part:
-            params.get("part") || ""
 
-    };
+/*
+====================================================
+DETERMINE SCAN MODE
+====================================================
 
-}
+NO PART PARAMETER
+    = PART SCAN
+
+PART PARAMETER EXISTS
+    = TRAY SCAN
+
+====================================================
+*/
+
+const scanType =
+    existingPart !== ""
+        ? "tray"
+        : "part";
 
 
 /*
@@ -105,11 +121,7 @@ SHOW SCANNER MODE
 ====================================================
 */
 
-const initialParams =
-    getScanParameters();
-
-
-if (initialParams.type === "tray") {
+if (scanType === "tray") {
 
     document.getElementById("message").innerHTML =
         "📦 Point camera at TRAY QR";
@@ -135,55 +147,20 @@ function onScanSuccess(decodedText) {
 
 
     /*
-    Get URL parameters AGAIN.
-    This is important for Tray scanning.
-    */
-
-    const scanParams =
-        getScanParameters();
-
-
-    const scanType =
-        scanParams.type;
-
-    const existingPart =
-        scanParams.part;
-
-
-    /*
-    ================================================
-    SHOW WHAT WAS SCANNED
-    ================================================
-    */
-
-    document.getElementById("message").innerHTML =
-        "Scanned: " +
-        scannedValue;
-
-
-    /*
-    Stop camera
+    Stop scanner
     */
 
     scanner.stop()
 
     .then(function() {
 
-        redirectAfterScan(
-            scannedValue,
-            scanType,
-            existingPart
-        );
+        redirectAfterScan(scannedValue);
 
     })
 
     .catch(function() {
 
-        redirectAfterScan(
-            scannedValue,
-            scanType,
-            existingPart
-        );
+        redirectAfterScan(scannedValue);
 
     });
 
@@ -196,16 +173,12 @@ REDIRECT AFTER SCAN
 ====================================================
 */
 
-function redirectAfterScan(
-    scannedValue,
-    scanType,
-    existingPart
-) {
+function redirectAfterScan(scannedValue) {
 
 
     /*
     ================================================
-    APPS SCRIPT WEB APP URL
+    APPS SCRIPT URL
     ================================================
     */
 
@@ -217,12 +190,11 @@ function redirectAfterScan(
 
     /*
     ================================================
-    PART QR
+    PART SCAN
     ================================================
     */
 
     if (scanType === "part") {
-
 
         const partURL =
             appURL +
@@ -238,13 +210,12 @@ function redirectAfterScan(
 
 
         return;
-
     }
 
 
     /*
     ================================================
-    TRAY QR
+    TRAY SCAN
     ================================================
     */
 
@@ -252,8 +223,7 @@ function redirectAfterScan(
 
 
         /*
-        Make sure the original Part
-        was received.
+        Existing Part must be available
         */
 
         if (!existingPart) {
@@ -267,11 +237,7 @@ function redirectAfterScan(
 
 
         /*
-        Create URL containing:
-
-        page=supply
-        part=MND-RRP-0001
-        tray=1
+        Build Tray URL
         */
 
         const trayURL =
@@ -288,20 +254,18 @@ function redirectAfterScan(
 
 
         /*
-        SHOW URL BEFORE REDIRECT
+        Show confirmation
         */
 
         document.getElementById("message").innerHTML =
-            "Tray scanned successfully.<br><br>" +
-            "Tray: <b>" +
+            "✅ Tray scanned: " +
             scannedValue +
-            "</b><br><br>" +
+            "<br><br>" +
             "Returning to Supply Page...";
 
 
         /*
-        Small delay so we know
-        the correct branch executed.
+        Redirect
         */
 
         setTimeout(function() {
@@ -309,23 +273,21 @@ function redirectAfterScan(
             window.location.href =
                 trayURL;
 
-        }, 800);
+        }, 500);
 
 
         return;
-
     }
 
 
     /*
     ================================================
-    UNKNOWN SCAN TYPE
+    UNKNOWN
     ================================================
     */
 
     document.getElementById("message").innerHTML =
-        "❌ Unknown scan type: " +
-        scanType;
+        "❌ Unknown scan mode.";
 
 }
 
@@ -355,7 +317,7 @@ Html5Qrcode.getCameras()
 
 
     /*
-    Use first available camera.
+    Use first camera
     */
 
     const cameraId =
@@ -363,9 +325,7 @@ Html5Qrcode.getCameras()
 
 
     /*
-    ================================================
-    START
-    ================================================
+    Start scanner
     */
 
     scanner.start(
@@ -373,34 +333,22 @@ Html5Qrcode.getCameras()
         cameraId,
 
         {
-
             fps: 10,
 
             qrbox: {
-
                 width: 250,
-
                 height: 250
-
             }
-
         },
 
         onScanSuccess
 
     )
 
-
     .then(function() {
 
 
-        const scanParams =
-            getScanParameters();
-
-
-        if (
-            scanParams.type === "tray"
-        ) {
+        if (scanType === "tray") {
 
             document.getElementById("message").innerHTML =
                 "📦 Point camera at TRAY QR";
@@ -413,7 +361,6 @@ Html5Qrcode.getCameras()
         }
 
     })
-
 
     .catch(function(error) {
 
