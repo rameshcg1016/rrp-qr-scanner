@@ -3,7 +3,8 @@
 
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
 
 <title>RRP QR Scanner</title>
 
@@ -65,7 +66,6 @@ h2 {
 
 <script>
 
-
 /*
 ====================================================
 READ CURRENT URL
@@ -81,9 +81,12 @@ const params =
 
 /*
 ====================================================
-GET PARAMETERS
+READ PARAMETERS
 ====================================================
 */
+
+const scanType =
+    params.get("type") || "part";
 
 const existingPart =
     params.get("part") || "";
@@ -99,28 +102,6 @@ const targetQty =
 
 const remarks =
     params.get("remarks") || "";
-
-
-/*
-====================================================
-DETERMINE SCAN TYPE
-====================================================
-
-No PART parameter
-        =
-PART SCAN
-
-PART parameter exists
-        =
-TRAY SCAN
-
-====================================================
-*/
-
-const scanType =
-    existingPart.trim() !== ""
-        ? "tray"
-        : "part";
 
 
 /*
@@ -146,7 +127,14 @@ if (scanType === "tray") {
     document.getElementById("message").innerHTML =
         "📦 Point the camera at the TRAY QR";
 
-} else {
+}
+else if (scanType === "batch") {
+
+    document.getElementById("message").innerHTML =
+        "🏷️ Point the camera at the SUPPLY QR";
+
+}
+else {
 
     document.getElementById("message").innerHTML =
         "📷 Point the camera at the PART QR";
@@ -203,9 +191,9 @@ function onScanSuccess(decodedText) {
         document.getElementById("message").innerHTML =
             "✅ Part QR scanned<br><br>" +
             "Part: <b>" +
-            scannedValue +
+            escapeHtml(scannedValue) +
             "</b><br><br>" +
-            "Loading...";
+            "Loading Supply Page...";
 
 
         scanner.stop().catch(
@@ -213,19 +201,11 @@ function onScanSuccess(decodedText) {
         );
 
 
-        /*
-        ----------------------------------------------
-        BUILD PART URL
-        ----------------------------------------------
-        */
-
         const partURL =
             appURL +
             "?page=supply" +
             "&part=" +
-            encodeURIComponent(
-                scannedValue
-            );
+            encodeURIComponent(scannedValue);
 
 
         setTimeout(
@@ -237,7 +217,6 @@ function onScanSuccess(decodedText) {
             },
             500
         );
-
 
         return;
     }
@@ -252,12 +231,6 @@ function onScanSuccess(decodedText) {
     if (scanType === "tray") {
 
 
-        /*
-        ----------------------------------------------
-        MAKE SURE PART EXISTS
-        ----------------------------------------------
-        */
-
         if (!existingPart) {
 
             document.getElementById("message").innerHTML =
@@ -266,20 +239,13 @@ function onScanSuccess(decodedText) {
             scanLocked = false;
 
             return;
-
         }
 
-
-        /*
-        ----------------------------------------------
-        SHOW SCANNED TRAY
-        ----------------------------------------------
-        */
 
         document.getElementById("message").innerHTML =
             "✅ Tray QR scanned<br><br>" +
             "Tray: <b>" +
-            scannedValue +
+            escapeHtml(scannedValue) +
             "</b><br><br>" +
             "Returning to Supply Page...";
 
@@ -289,61 +255,75 @@ function onScanSuccess(decodedText) {
         );
 
 
-        /*
-        ==================================================
-        BUILD FINAL SUPPLY URL
-        ==================================================
-        
-        IMPORTANT:
-        We now preserve ALL supply information.
-        ==================================================
-        */
-
         const trayURL =
             appURL +
             "?page=supply" +
 
             "&part=" +
-            encodeURIComponent(
-                existingPart
-            ) +
+            encodeURIComponent(existingPart) +
 
             "&tray=" +
-            encodeURIComponent(
-                scannedValue
-            ) +
+            encodeURIComponent(scannedValue) +
 
             "&supplyDate=" +
-            encodeURIComponent(
-                supplyDate
-            ) +
+            encodeURIComponent(supplyDate) +
 
             "&suppliedKg=" +
-            encodeURIComponent(
-                suppliedKg
-            ) +
+            encodeURIComponent(suppliedKg) +
 
             "&targetQty=" +
-            encodeURIComponent(
-                targetQty
-            ) +
+            encodeURIComponent(targetQty) +
 
             "&remarks=" +
-            encodeURIComponent(
-                remarks
-            );
+            encodeURIComponent(remarks);
+
+
+        setTimeout(
+            function() {
+
+                window.location.href =
+                    trayURL;
+
+            },
+            500
+        );
+
+        return;
+    }
+
+
+    /*
+    ==================================================
+    BATCH / SUPPLY QR
+    ==================================================
+    */
+
+    if (scanType === "batch") {
+
+        document.getElementById("message").innerHTML =
+            "✅ SUPPLY QR SCANNED<br><br>" +
+            "QR: <b>" +
+            escapeHtml(scannedValue) +
+            "</b><br><br>" +
+            "Returning to Batch Page...";
+
+
+        scanner.stop().catch(
+            function() {}
+        );
 
 
         /*
         ----------------------------------------------
-        DEBUG DISPLAY
+        RETURN TO BATCH CREATE PAGE
         ----------------------------------------------
         */
 
-        console.log(
-            "TRAY URL:",
-            trayURL
-        );
+        const batchURL =
+            appURL +
+            "?page=batchcreate" +
+            "&scan=" +
+            encodeURIComponent(scannedValue);
 
 
         /*
@@ -356,12 +336,11 @@ function onScanSuccess(decodedText) {
             function() {
 
                 window.location.href =
-                    trayURL;
+                    batchURL;
 
             },
             500
         );
-
 
         return;
     }
@@ -375,6 +354,8 @@ function onScanSuccess(decodedText) {
 
     document.getElementById("message").innerHTML =
         "❌ Unknown scan mode.";
+
+    scanLocked = false;
 
 }
 
@@ -440,20 +421,21 @@ Html5Qrcode.getCameras()
     .then(function() {
 
 
-        if (
-            scanType === "tray"
-        ) {
+        if (scanType === "tray") {
 
-            document.getElementById(
-                "message"
-            ).innerHTML =
+            document.getElementById("message").innerHTML =
                 "📦 Point the camera at the TRAY QR";
 
-        } else {
+        }
+        else if (scanType === "batch") {
 
-            document.getElementById(
-                "message"
-            ).innerHTML =
+            document.getElementById("message").innerHTML =
+                "🏷️ Point the camera at the SUPPLY QR";
+
+        }
+        else {
+
+            document.getElementById("message").innerHTML =
                 "📷 Point the camera at the PART QR";
 
         }
@@ -463,9 +445,7 @@ Html5Qrcode.getCameras()
 
     .catch(function(error) {
 
-        document.getElementById(
-            "message"
-        ).innerHTML =
+        document.getElementById("message").innerHTML =
             "❌ Camera error:<br>" +
             error;
 
@@ -476,13 +456,30 @@ Html5Qrcode.getCameras()
 
 .catch(function(error) {
 
-    document.getElementById(
-        "message"
-    ).innerHTML =
+    document.getElementById("message").innerHTML =
         "❌ Unable to access camera:<br>" +
         error;
 
 });
+
+
+/*
+====================================================
+ESCAPE HTML
+====================================================
+*/
+
+function escapeHtml(value) {
+
+    return String(value == null ? "" : value)
+
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+
+}
 
 </script>
 
