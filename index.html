@@ -43,13 +43,6 @@ h2 {
     line-height: 1.5;
 }
 
-button {
-    width: 100%;
-    padding: 12px;
-    margin-top: 15px;
-    font-size: 16px;
-}
-
 </style>
 
 </head>
@@ -59,22 +52,23 @@ button {
 
 <div class="container">
 
-<h2>RRP QR SCANNER</h2>
+    <h2>RRP QR SCANNER</h2>
 
-<div id="reader"></div>
+    <div id="reader"></div>
 
-<div id="message">
-Starting camera...
-</div>
+    <div id="message">
+        Starting camera...
+    </div>
 
 </div>
 
 
 <script>
 
+
 /*
 ====================================================
-READ URL PARAMETERS
+READ CURRENT URL
 ====================================================
 */
 
@@ -87,27 +81,40 @@ const params =
 
 /*
 ====================================================
-GET EXISTING PART
+GET PARAMETERS
 ====================================================
 */
 
 const existingPart =
     params.get("part") || "";
 
+const supplyDate =
+    params.get("supplyDate") || "";
+
+const suppliedKg =
+    params.get("suppliedKg") || "";
+
+const targetQty =
+    params.get("targetQty") || "";
+
+const remarks =
+    params.get("remarks") || "";
+
 
 /*
 ====================================================
-DETERMINE SCAN MODE
+DETERMINE SCAN TYPE
 ====================================================
 
-NO "part" PARAMETER
+No PART parameter
         =
 PART SCAN
 
-"part" PARAMETER EXISTS
+PART parameter exists
         =
 TRAY SCAN
 
+====================================================
 */
 
 const scanType =
@@ -118,7 +125,7 @@ const scanType =
 
 /*
 ====================================================
-APPS SCRIPT WEB APP URL
+APPS SCRIPT URL
 ====================================================
 */
 
@@ -186,9 +193,9 @@ function onScanSuccess(decodedText) {
 
 
     /*
-    ================================================
+    ==================================================
     PART QR
-    ================================================
+    ==================================================
     */
 
     if (scanType === "part") {
@@ -201,30 +208,35 @@ function onScanSuccess(decodedText) {
             "Loading...";
 
 
-        scanner.stop().catch(function() {});
+        scanner.stop().catch(
+            function() {}
+        );
 
 
         /*
-        Build Supply Page URL
+        ----------------------------------------------
+        BUILD PART URL
+        ----------------------------------------------
         */
 
         const partURL =
             appURL +
             "?page=supply" +
             "&part=" +
-            encodeURIComponent(scannedValue);
+            encodeURIComponent(
+                scannedValue
+            );
 
 
-        /*
-        Redirect to Supply Page
-        */
+        setTimeout(
+            function() {
 
-        setTimeout(function() {
+                window.location.href =
+                    partURL;
 
-            window.location.href =
-                partURL;
-
-        }, 500);
+            },
+            500
+        );
 
 
         return;
@@ -232,16 +244,18 @@ function onScanSuccess(decodedText) {
 
 
     /*
-    ================================================
+    ==================================================
     TRAY QR
-    ================================================
+    ==================================================
     */
 
     if (scanType === "tray") {
 
 
         /*
-        Make sure Part Number exists
+        ----------------------------------------------
+        MAKE SURE PART EXISTS
+        ----------------------------------------------
         */
 
         if (!existingPart) {
@@ -252,8 +266,15 @@ function onScanSuccess(decodedText) {
             scanLocked = false;
 
             return;
+
         }
 
+
+        /*
+        ----------------------------------------------
+        SHOW SCANNED TRAY
+        ----------------------------------------------
+        */
 
         document.getElementById("message").innerHTML =
             "✅ Tray QR scanned<br><br>" +
@@ -263,32 +284,83 @@ function onScanSuccess(decodedText) {
             "Returning to Supply Page...";
 
 
-        scanner.stop().catch(function() {});
+        scanner.stop().catch(
+            function() {}
+        );
 
 
         /*
-        Build final Supply Page URL
+        ==================================================
+        BUILD FINAL SUPPLY URL
+        ==================================================
+        
+        IMPORTANT:
+        We now preserve ALL supply information.
+        ==================================================
         */
 
         const trayURL =
             appURL +
             "?page=supply" +
+
             "&part=" +
-            encodeURIComponent(existingPart) +
+            encodeURIComponent(
+                existingPart
+            ) +
+
             "&tray=" +
-            encodeURIComponent(scannedValue);
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&supplyDate=" +
+            encodeURIComponent(
+                supplyDate
+            ) +
+
+            "&suppliedKg=" +
+            encodeURIComponent(
+                suppliedKg
+            ) +
+
+            "&targetQty=" +
+            encodeURIComponent(
+                targetQty
+            ) +
+
+            "&remarks=" +
+            encodeURIComponent(
+                remarks
+            );
 
 
         /*
-        Redirect to Supply Page
+        ----------------------------------------------
+        DEBUG DISPLAY
+        ----------------------------------------------
         */
 
-        setTimeout(function() {
+        console.log(
+            "TRAY URL:",
+            trayURL
+        );
 
-            window.location.href =
-                trayURL;
 
-        }, 500);
+        /*
+        ----------------------------------------------
+        REDIRECT
+        ----------------------------------------------
+        */
+
+        setTimeout(
+            function() {
+
+                window.location.href =
+                    trayURL;
+
+            },
+            500
+        );
 
 
         return;
@@ -296,9 +368,9 @@ function onScanSuccess(decodedText) {
 
 
     /*
-    ================================================
-    UNKNOWN MODE
-    ================================================
+    ==================================================
+    UNKNOWN
+    ==================================================
     */
 
     document.getElementById("message").innerHTML =
@@ -318,7 +390,10 @@ Html5Qrcode.getCameras()
 .then(function(cameras) {
 
 
-    if (!cameras || cameras.length === 0) {
+    if (
+        !cameras ||
+        cameras.length === 0
+    ) {
 
         document.getElementById("message").innerHTML =
             "❌ No camera found.";
@@ -329,7 +404,9 @@ Html5Qrcode.getCameras()
 
 
     /*
-    Use first available camera
+    ----------------------------------------------
+    USE FIRST CAMERA
+    ----------------------------------------------
     */
 
     const cameraId =
@@ -337,9 +414,9 @@ Html5Qrcode.getCameras()
 
 
     /*
-    ================================================
+    ----------------------------------------------
     START CAMERA
-    ================================================
+    ----------------------------------------------
     */
 
     scanner.start(
@@ -362,14 +439,21 @@ Html5Qrcode.getCameras()
 
     .then(function() {
 
-        if (scanType === "tray") {
 
-            document.getElementById("message").innerHTML =
+        if (
+            scanType === "tray"
+        ) {
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
                 "📦 Point the camera at the TRAY QR";
 
         } else {
 
-            document.getElementById("message").innerHTML =
+            document.getElementById(
+                "message"
+            ).innerHTML =
                 "📷 Point the camera at the PART QR";
 
         }
@@ -379,7 +463,9 @@ Html5Qrcode.getCameras()
 
     .catch(function(error) {
 
-        document.getElementById("message").innerHTML =
+        document.getElementById(
+            "message"
+        ).innerHTML =
             "❌ Camera error:<br>" +
             error;
 
@@ -390,13 +476,16 @@ Html5Qrcode.getCameras()
 
 .catch(function(error) {
 
-    document.getElementById("message").innerHTML =
+    document.getElementById(
+        "message"
+    ).innerHTML =
         "❌ Unable to access camera:<br>" +
         error;
 
 });
 
 </script>
+
 
 </body>
 
