@@ -8,20 +8,10 @@
 
 <title>RRP QR Scanner</title>
 
-
-<!-- =====================================================
-     GOOGLE IDENTITY SERVICES
-     ===================================================== -->
-
 <script src="https://accounts.google.com/gsi/client"
         async
         defer>
 </script>
-
-
-<!-- =====================================================
-     HTML5 QR CODE
-     ===================================================== -->
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
@@ -31,7 +21,6 @@
 * {
     box-sizing: border-box;
 }
-
 
 body {
 
@@ -48,7 +37,6 @@ body {
 
 }
 
-
 .container {
 
     max-width: 500px;
@@ -63,7 +51,6 @@ body {
 
 }
 
-
 h2 {
 
     text-align: center;
@@ -72,7 +59,6 @@ h2 {
 
 }
 
-
 #loginSection {
 
     text-align: center;
@@ -80,7 +66,6 @@ h2 {
     padding: 15px 0 20px 0;
 
 }
-
 
 #loginTitle {
 
@@ -92,7 +77,6 @@ h2 {
 
 }
 
-
 #googleButton {
 
     display: flex;
@@ -100,7 +84,6 @@ h2 {
     justify-content: center;
 
 }
-
 
 #loginMessage {
 
@@ -111,7 +94,6 @@ h2 {
     line-height: 1.5;
 
 }
-
 
 #userInfo {
 
@@ -131,7 +113,6 @@ h2 {
 
 }
 
-
 #userName {
 
     font-weight: bold;
@@ -140,13 +121,11 @@ h2 {
 
 }
 
-
 #userEmail {
 
     margin-bottom: 4px;
 
 }
-
 
 #userRoles {
 
@@ -156,7 +135,6 @@ h2 {
 
 }
 
-
 #reader {
 
     width: 100%;
@@ -165,13 +143,11 @@ h2 {
 
 }
 
-
 #scannerSection {
 
     display: none;
 
 }
-
 
 #message {
 
@@ -187,13 +163,11 @@ h2 {
 
 }
 
-
 .error {
 
     color: #c62828;
 
 }
-
 
 .success {
 
@@ -201,13 +175,11 @@ h2 {
 
 }
 
-
 .info {
 
     color: #555;
 
 }
-
 
 .logout {
 
@@ -227,7 +199,6 @@ h2 {
 
 }
 
-
 </style>
 
 </head>
@@ -239,90 +210,75 @@ h2 {
 <div class="container">
 
 
-    <h2>
-        RRP QR SCANNER
-    </h2>
+<h2>
+RRP QR SCANNER
+</h2>
 
 
-    <!-- =================================================
-         LOGIN SECTION
-         ================================================= -->
+<!-- =====================================================
+     LOGIN
+     ===================================================== -->
 
-    <div id="loginSection">
+<div id="loginSection">
 
-
-        <div id="loginTitle">
-
-            Sign in to RRP ERP
-
-        </div>
-
-
-        <div id="googleButton">
-
-            Loading Google Login...
-
-        </div>
-
-
-        <div id="loginMessage"
-             class="info">
-
-            Please sign in with your authorized
-            Google account.
-
-        </div>
-
-
+    <div id="loginTitle">
+        Sign in to RRP ERP
     </div>
 
-
-    <!-- =================================================
-         USER INFORMATION
-         ================================================= -->
-
-    <div id="userInfo">
-
-        <div id="userName"></div>
-
-        <div id="userEmail"></div>
-
-        <div id="userRoles"></div>
-
-
-        <button
-            class="logout"
-            onclick="logoutUser()">
-
-            Sign Out
-
-        </button>
-
+    <div id="googleButton">
+        Loading Google Login...
     </div>
 
+    <div id="loginMessage"
+         class="info">
 
-    <!-- =================================================
-         SCANNER SECTION
-         ================================================= -->
-
-    <div id="scannerSection">
-
-
-        <div id="reader"></div>
-
-
-        <div id="message">
-
-            Starting camera...
-
-        </div>
-
+        Please sign in with your authorized
+        Google account.
 
     </div>
-
 
 </div>
 
+
+<!-- =====================================================
+     USER INFORMATION
+     ===================================================== -->
+
+<div id="userInfo">
+
+    <div id="userName"></div>
+
+    <div id="userEmail"></div>
+
+    <div id="userRoles"></div>
+
+    <button
+        class="logout"
+        onclick="logoutUser()">
+
+        Sign Out
+
+    </button>
+
+</div>
+
+
+<!-- =====================================================
+     SCANNER
+     ===================================================== -->
+
+<div id="scannerSection">
+
+    <div id="reader"></div>
+
+    <div id="message">
+        Starting camera...
+    </div>
+
+</div>
+
+
+</div>
 
 
 <script>
@@ -333,7 +289,6 @@ h2 {
 CONFIGURATION
 ============================================================
 */
-
 
 const GOOGLE_CLIENT_ID =
 
@@ -360,13 +315,11 @@ READ CURRENT URL
 ============================================================
 */
 
-
 const currentURL =
 
     new URL(
         window.location.href
     );
-
 
 const params =
 
@@ -375,10 +328,9 @@ const params =
 
 /*
 ============================================================
-READ SCAN PARAMETERS
+SCAN PARAMETERS
 ============================================================
 */
-
 
 const scanType =
 
@@ -412,37 +364,54 @@ const remarks =
 
 /*
 ============================================================
-SESSION TOKEN
+SESSION
 ============================================================
 */
-
 
 let sessionToken =
 
     params.get("session") || "";
 
 
+if (!sessionToken) {
+
+    sessionToken =
+
+        localStorage.getItem(
+            "rrpSession"
+        ) || "";
+
+}
+
+
+if (sessionToken) {
+
+    localStorage.setItem(
+        "rrpSession",
+        sessionToken
+    );
+
+}
+
+
 /*
 ============================================================
-USER INFORMATION
+SCANNER VARIABLES
 ============================================================
 */
-
-
-let currentUser = null;
-
-
-/*
-============================================================
-SCANNER
-============================================================
-*/
-
 
 let scanner = null;
 
-
 let scanLocked = false;
+
+
+/*
+============================================================
+CURRENT USER
+============================================================
+*/
+
+let currentUser = null;
 
 
 /*
@@ -451,64 +420,11 @@ PAGE LOAD
 ============================================================
 */
 
-
 window.addEventListener(
 
     "load",
 
     function() {
-
-        /*
-        ----------------------------------------------------
-        CHECK URL SESSION
-        ----------------------------------------------------
-        */
-
-        if (
-            sessionToken
-        ) {
-
-            /*
-            -----------------------------------------------
-            Save session locally
-            -----------------------------------------------
-            */
-
-            localStorage.setItem(
-
-                "rrpSession",
-
-                sessionToken
-
-            );
-
-        }
-
-
-        /*
-        ----------------------------------------------------
-        IF NO URL SESSION, CHECK LOCAL STORAGE
-        ----------------------------------------------------
-        */
-
-        if (
-            !sessionToken
-        ) {
-
-            sessionToken =
-
-                localStorage.getItem(
-                    "rrpSession"
-                ) || "";
-
-        }
-
-
-        /*
-        ----------------------------------------------------
-        INITIALIZE GOOGLE LOGIN
-        ----------------------------------------------------
-        */
 
         initializeGoogleLogin();
 
@@ -519,19 +435,12 @@ window.addEventListener(
 
 /*
 ============================================================
-INITIALIZE GOOGLE LOGIN
+GOOGLE LOGIN
 ============================================================
 */
 
-
 function initializeGoogleLogin() {
 
-
-    /*
-    --------------------------------------------------------
-    WAIT FOR GOOGLE LIBRARY
-    --------------------------------------------------------
-    */
 
     if (
 
@@ -575,7 +484,7 @@ function initializeGoogleLogin() {
 
     /*
     --------------------------------------------------------
-    SHOW GOOGLE BUTTON
+    GOOGLE BUTTON
     --------------------------------------------------------
     */
 
@@ -616,7 +525,6 @@ GOOGLE LOGIN SUCCESS
 ============================================================
 */
 
-
 function handleGoogleLogin(
     response
 ) {
@@ -649,12 +557,6 @@ function handleGoogleLogin(
         "info";
 
 
-    /*
-    ========================================================
-    SEND GOOGLE TOKEN TO APPS SCRIPT
-    ========================================================
-    */
-
     submitAuthentication(
 
         response.credential
@@ -669,7 +571,6 @@ function handleGoogleLogin(
 SEND GOOGLE TOKEN TO APPS SCRIPT
 ============================================================
 */
-
 
 function submitAuthentication(
     googleToken
@@ -689,7 +590,7 @@ function submitAuthentication(
 
     /*
     --------------------------------------------------------
-    CREATE FORM
+    CREATE POST FORM
     --------------------------------------------------------
     */
 
@@ -740,7 +641,7 @@ function submitAuthentication(
 
     /*
     --------------------------------------------------------
-    REQUESTED PAGE
+    PAGE
     --------------------------------------------------------
     */
 
@@ -816,17 +717,16 @@ function submitAuthentication(
 
 /*
 ============================================================
-DETERMINE REQUESTED PAGE
+REQUESTED PAGE
 ============================================================
 */
-
 
 function getRequestedPage() {
 
 
     /*
     --------------------------------------------------------
-    PRODUCTION
+    PRODUCTION SCANNER
     --------------------------------------------------------
     */
 
@@ -841,7 +741,7 @@ function getRequestedPage() {
 
     /*
     --------------------------------------------------------
-    BATCH
+    BATCH SCANNER
     --------------------------------------------------------
     */
 
@@ -867,15 +767,13 @@ function getRequestedPage() {
 
 /*
 ============================================================
-SHOW LOGIN ERROR
+LOGIN ERROR
 ============================================================
 */
-
 
 function showLoginError(
     message
 ) {
-
 
     const element =
 
@@ -905,24 +803,11 @@ LOGOUT
 ============================================================
 */
 
-
 function logoutUser() {
 
 
-    /*
-    --------------------------------------------------------
-    STOP CAMERA
-    --------------------------------------------------------
-    */
-
     stopScanner();
 
-
-    /*
-    --------------------------------------------------------
-    REMOVE SESSION
-    --------------------------------------------------------
-    */
 
     localStorage.removeItem(
         "rrpSession"
@@ -939,12 +824,6 @@ function logoutUser() {
     currentUser = null;
 
 
-    /*
-    --------------------------------------------------------
-    RELOAD
-    --------------------------------------------------------
-    */
-
     window.location.href =
         scannerURL;
 
@@ -957,15 +836,8 @@ START SCANNER
 ============================================================
 */
 
-
 function startScanner() {
 
-
-    /*
-    --------------------------------------------------------
-    HIDE LOGIN
-    --------------------------------------------------------
-    */
 
     document.getElementById(
         "loginSection"
@@ -973,9 +845,15 @@ function startScanner() {
         "none";
 
 
+    document.getElementById(
+        "scannerSection"
+    ).style.display =
+        "block";
+
+
     /*
     --------------------------------------------------------
-    SHOW USER INFO
+    USER INFO
     --------------------------------------------------------
     */
 
@@ -1026,19 +904,7 @@ function startScanner() {
 
     /*
     --------------------------------------------------------
-    SHOW SCANNER
-    --------------------------------------------------------
-    */
-
-    document.getElementById(
-        "scannerSection"
-    ).style.display =
-        "block";
-
-
-    /*
-    --------------------------------------------------------
-    SHOW SCAN MODE
+    MESSAGE
     --------------------------------------------------------
     */
 
@@ -1060,7 +926,7 @@ function startScanner() {
 
     /*
     --------------------------------------------------------
-    GET CAMERAS
+    GET CAMERA
     --------------------------------------------------------
     */
 
@@ -1092,7 +958,7 @@ function startScanner() {
 
             /*
             ----------------------------------------------
-            USE FIRST CAMERA
+            FIRST CAMERA
             ----------------------------------------------
             */
 
@@ -1102,7 +968,7 @@ function startScanner() {
 
             /*
             ----------------------------------------------
-            START CAMERA
+            START
             ----------------------------------------------
             */
 
@@ -1183,10 +1049,9 @@ function startScanner() {
 
 /*
 ============================================================
-SHOW SCAN MESSAGE
+SCAN MESSAGE
 ============================================================
 */
-
 
 function showScanMessage() {
 
@@ -1218,6 +1083,16 @@ function showScanMessage() {
 
     }
 
+    else if (
+        scanType === "production"
+    ) {
+
+        message.innerHTML =
+
+            "🏭 Point the camera at the SUPPLY QR";
+
+    }
+
     else {
 
         message.innerHTML =
@@ -1234,7 +1109,6 @@ function showScanMessage() {
 QR SCAN SUCCESS
 ============================================================
 */
-
 
 function onScanSuccess(
     decodedText
@@ -1256,6 +1130,195 @@ function onScanSuccess(
     const scannedValue =
 
         decodedText.trim();
+
+
+    /*
+    ========================================================
+    IMPORTANT:
+    DETECT APPS SCRIPT SUPPLY URL
+    ========================================================
+    */
+
+    let scannedURL = null;
+
+
+    try {
+
+        scannedURL =
+            new URL(
+                scannedValue
+            );
+
+    }
+
+    catch(error) {
+
+        scannedURL = null;
+
+    }
+
+
+    /*
+    ========================================================
+    IF QR IS A URL
+    ========================================================
+    */
+
+    if (
+        scannedURL
+    ) {
+
+
+        /*
+        ----------------------------------------------------
+        GET PAGE PARAMETER
+        ----------------------------------------------------
+        */
+
+        const qrPage =
+
+            scannedURL.searchParams.get(
+                "page"
+            );
+
+
+        /*
+        ----------------------------------------------------
+        GET SUPPLY ID
+        ----------------------------------------------------
+        */
+
+        const supplyID =
+
+            scannedURL.searchParams.get(
+                "id"
+            );
+
+
+        /*
+        ====================================================
+        PRODUCTION QR
+        ====================================================
+        */
+
+        if (
+            qrPage === "production" &&
+            supplyID
+        ) {
+
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "✅ SUPPLY QR SCANNED<br><br>" +
+
+                "Supply ID: <b>" +
+
+                escapeHtml(
+                    supplyID
+                ) +
+
+                "</b><br><br>" +
+
+                "Opening Production Page...";
+
+
+            stopScanner();
+
+
+            const productionURL =
+
+                appURL +
+
+                "?page=production" +
+
+                "&id=" +
+
+                encodeURIComponent(
+                    supplyID
+                ) +
+
+                "&session=" +
+
+                encodeURIComponent(
+                    sessionToken
+                );
+
+
+            setTimeout(
+
+                function() {
+
+                    window.location.href =
+                        productionURL;
+
+                },
+
+                500
+
+            );
+
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        BATCH QR
+        ====================================================
+        */
+
+        if (
+            qrPage === "production" &&
+            supplyID
+        ) {
+
+
+            /*
+            This branch is normally handled by the
+            scanType === "batch" section below.
+
+            It is intentionally left here as a fallback.
+            */
+
+        }
+
+    }
+
+
+    /*
+    ========================================================
+    PRODUCTION SCAN MODE
+    ========================================================
+    */
+
+    if (
+        scanType === "production"
+    ) {
+
+
+        /*
+        ----------------------------------------------------
+        IF QR WAS NOT THE EXPECTED URL
+        ----------------------------------------------------
+        */
+
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
+            "❌ Invalid Supply QR.<br><br>" +
+
+            "Please scan the Supply QR generated by RRP.";
+
+        scanLocked = false;
+
+        return;
+
+    }
 
 
     /*
@@ -1288,12 +1351,6 @@ function onScanSuccess(
 
         stopScanner();
 
-
-        /*
-        ----------------------------------------------------
-        BUILD SUPPLY URL
-        ----------------------------------------------------
-        */
 
         const partURL =
 
@@ -1384,12 +1441,6 @@ function onScanSuccess(
         stopScanner();
 
 
-        /*
-        ----------------------------------------------------
-        BUILD TRAY URL
-        ----------------------------------------------------
-        */
-
         const trayURL =
 
             appURL +
@@ -1469,21 +1520,87 @@ function onScanSuccess(
     ) {
 
 
+        /*
+        ----------------------------------------------------
+        QR MUST BE SUPPLY PRODUCTION URL
+        ----------------------------------------------------
+        */
+
+        if (
+            !scannedURL
+        ) {
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "Please scan the Supply QR.";
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        const batchQRPage =
+
+            scannedURL.searchParams.get(
+                "page"
+            );
+
+
+        const batchSupplyID =
+
+            scannedURL.searchParams.get(
+                "id"
+            );
+
+
+        /*
+        ----------------------------------------------------
+        CHECK SUPPLY QR
+        ----------------------------------------------------
+        */
+
+        if (
+            batchQRPage !== "production" ||
+            !batchSupplyID
+        ) {
+
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "The QR must contain a valid Supply ID.";
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
         document.getElementById(
             "message"
         ).innerHTML =
 
             "✅ SUPPLY QR SCANNED<br><br>" +
 
-            "QR: <b>" +
+            "Supply ID: <b>" +
 
             escapeHtml(
-                scannedValue
+                batchSupplyID
             ) +
 
             "</b><br><br>" +
 
-            "Returning to Batch Page...";
+            "Opening Batch Create Page...";
 
 
         stopScanner();
@@ -1491,7 +1608,7 @@ function onScanSuccess(
 
         /*
         ----------------------------------------------------
-        BUILD BATCH URL
+        OPEN BATCH CREATE
         ----------------------------------------------------
         */
 
@@ -1504,7 +1621,7 @@ function onScanSuccess(
             "&scan=" +
 
             encodeURIComponent(
-                scannedValue
+                batchSupplyID
             ) +
 
             "&session=" +
@@ -1557,7 +1674,6 @@ STOP SCANNER
 ============================================================
 */
 
-
 function stopScanner() {
 
 
@@ -1581,7 +1697,6 @@ function stopScanner() {
 ESCAPE HTML
 ============================================================
 */
-
 
 function escapeHtml(
     value
