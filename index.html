@@ -93,6 +93,15 @@ h2 {
 }
 
 
+#googleButton {
+
+    display: flex;
+
+    justify-content: center;
+
+}
+
+
 #loginMessage {
 
     margin-top: 15px;
@@ -119,6 +128,31 @@ h2 {
     font-size: 14px;
 
     text-align: center;
+
+}
+
+
+#userName {
+
+    font-weight: bold;
+
+    margin-bottom: 4px;
+
+}
+
+
+#userEmail {
+
+    margin-bottom: 4px;
+
+}
+
+
+#userRoles {
+
+    font-size: 13px;
+
+    color: #555;
 
 }
 
@@ -211,7 +245,7 @@ h2 {
 
 
     <!-- =================================================
-         LOGIN
+         LOGIN SECTION
          ================================================= -->
 
     <div id="loginSection">
@@ -268,7 +302,7 @@ h2 {
 
 
     <!-- =================================================
-         SCANNER
+         SCANNER SECTION
          ================================================= -->
 
     <div id="scannerSection">
@@ -313,6 +347,11 @@ const appURL =
     "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
 
     "/exec";
+
+
+const scannerURL =
+
+    "https://rameshcg1016.github.io/rrp-qr-scanner/";
 
 
 /*
@@ -373,19 +412,42 @@ const remarks =
 
 /*
 ============================================================
-GLOBAL VARIABLES
+SESSION TOKEN
+============================================================
+*/
+
+
+let sessionToken =
+
+    params.get("session") || "";
+
+
+/*
+============================================================
+USER INFORMATION
+============================================================
+*/
+
+
+let currentUser = null;
+
+
+/*
+============================================================
+SCANNER
 ============================================================
 */
 
 
 let scanner = null;
 
+
 let scanLocked = false;
 
 
 /*
 ============================================================
-INITIALIZE GOOGLE LOGIN
+PAGE LOAD
 ============================================================
 */
 
@@ -396,6 +458,58 @@ window.addEventListener(
 
     function() {
 
+        /*
+        ----------------------------------------------------
+        CHECK URL SESSION
+        ----------------------------------------------------
+        */
+
+        if (
+            sessionToken
+        ) {
+
+            /*
+            -----------------------------------------------
+            Save session locally
+            -----------------------------------------------
+            */
+
+            localStorage.setItem(
+
+                "rrpSession",
+
+                sessionToken
+
+            );
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        IF NO URL SESSION, CHECK LOCAL STORAGE
+        ----------------------------------------------------
+        */
+
+        if (
+            !sessionToken
+        ) {
+
+            sessionToken =
+
+                localStorage.getItem(
+                    "rrpSession"
+                ) || "";
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        INITIALIZE GOOGLE LOGIN
+        ----------------------------------------------------
+        */
+
         initializeGoogleLogin();
 
     }
@@ -405,7 +519,7 @@ window.addEventListener(
 
 /*
 ============================================================
-GOOGLE LOGIN
+INITIALIZE GOOGLE LOGIN
 ============================================================
 */
 
@@ -429,7 +543,6 @@ function initializeGoogleLogin() {
 
     ) {
 
-
         setTimeout(
 
             initializeGoogleLogin,
@@ -437,7 +550,6 @@ function initializeGoogleLogin() {
             500
 
         );
-
 
         return;
 
@@ -494,6 +606,7 @@ function initializeGoogleLogin() {
 
     );
 
+
 }
 
 
@@ -504,7 +617,9 @@ GOOGLE LOGIN SUCCESS
 */
 
 
-function handleGoogleLogin(response) {
+function handleGoogleLogin(
+    response
+) {
 
 
     if (
@@ -551,7 +666,7 @@ function handleGoogleLogin(response) {
 
 /*
 ============================================================
-SEND AUTHENTICATION TO APPS SCRIPT
+SEND GOOGLE TOKEN TO APPS SCRIPT
 ============================================================
 */
 
@@ -559,6 +674,17 @@ SEND AUTHENTICATION TO APPS SCRIPT
 function submitAuthentication(
     googleToken
 ) {
+
+
+    /*
+    --------------------------------------------------------
+    DETERMINE REQUESTED PAGE
+    --------------------------------------------------------
+    */
+
+    const requestedPage =
+
+        getRequestedPage();
 
 
     /*
@@ -584,7 +710,7 @@ function submitAuthentication(
 
     /*
     --------------------------------------------------------
-    TOKEN
+    GOOGLE TOKEN
     --------------------------------------------------------
     */
 
@@ -634,7 +760,7 @@ function submitAuthentication(
 
 
     pageInput.value =
-        getRequestedPage();
+        requestedPage;
 
 
     form.appendChild(
@@ -700,7 +826,7 @@ function getRequestedPage() {
 
     /*
     --------------------------------------------------------
-    NORMAL SCANNER
+    PRODUCTION
     --------------------------------------------------------
     */
 
@@ -713,6 +839,12 @@ function getRequestedPage() {
     }
 
 
+    /*
+    --------------------------------------------------------
+    BATCH
+    --------------------------------------------------------
+    */
+
     if (
         scanType === "batch"
     ) {
@@ -721,6 +853,12 @@ function getRequestedPage() {
 
     }
 
+
+    /*
+    --------------------------------------------------------
+    DEFAULT
+    --------------------------------------------------------
+    */
 
     return "supply";
 
@@ -738,6 +876,7 @@ function showLoginError(
     message
 ) {
 
+
     const element =
 
         document.getElementById(
@@ -748,6 +887,7 @@ function showLoginError(
     element.innerHTML =
 
         "❌ " +
+
         escapeHtml(
             message
         );
@@ -769,22 +909,44 @@ LOGOUT
 function logoutUser() {
 
 
-    try {
+    /*
+    --------------------------------------------------------
+    STOP CAMERA
+    --------------------------------------------------------
+    */
 
-        localStorage.removeItem(
-            "rrpUser"
-        );
-
-    }
-
-    catch(error) {
-
-        console.log(error);
-
-    }
+    stopScanner();
 
 
-    location.reload();
+    /*
+    --------------------------------------------------------
+    REMOVE SESSION
+    --------------------------------------------------------
+    */
+
+    localStorage.removeItem(
+        "rrpSession"
+    );
+
+
+    localStorage.removeItem(
+        "rrpUser"
+    );
+
+
+    sessionToken = "";
+
+    currentUser = null;
+
+
+    /*
+    --------------------------------------------------------
+    RELOAD
+    --------------------------------------------------------
+    */
+
+    window.location.href =
+        scannerURL;
 
 }
 
@@ -799,11 +961,74 @@ START SCANNER
 function startScanner() {
 
 
+    /*
+    --------------------------------------------------------
+    HIDE LOGIN
+    --------------------------------------------------------
+    */
+
     document.getElementById(
         "loginSection"
     ).style.display =
         "none";
 
+
+    /*
+    --------------------------------------------------------
+    SHOW USER INFO
+    --------------------------------------------------------
+    */
+
+    if (
+        currentUser
+    ) {
+
+        document.getElementById(
+            "userInfo"
+        ).style.display =
+            "block";
+
+
+        document.getElementById(
+            "userName"
+        ).innerHTML =
+
+            "👤 " +
+
+            escapeHtml(
+                currentUser.name
+            );
+
+
+        document.getElementById(
+            "userEmail"
+        ).innerHTML =
+
+            escapeHtml(
+                currentUser.email
+            );
+
+
+        document.getElementById(
+            "userRoles"
+        ).innerHTML =
+
+            "Roles: " +
+
+            escapeHtml(
+                currentUser.roles.join(
+                    ", "
+                )
+            );
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    SHOW SCANNER
+    --------------------------------------------------------
+    */
 
     document.getElementById(
         "scannerSection"
@@ -1039,7 +1264,6 @@ function onScanSuccess(
     ========================================================
     */
 
-
     if (
         scanType === "part"
     ) {
@@ -1065,6 +1289,12 @@ function onScanSuccess(
         stopScanner();
 
 
+        /*
+        ----------------------------------------------------
+        BUILD SUPPLY URL
+        ----------------------------------------------------
+        */
+
         const partURL =
 
             appURL +
@@ -1075,6 +1305,12 @@ function onScanSuccess(
 
             encodeURIComponent(
                 scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
             );
 
 
@@ -1102,7 +1338,6 @@ function onScanSuccess(
     TRAY QR
     ========================================================
     */
-
 
     if (
         scanType === "tray"
@@ -1149,6 +1384,12 @@ function onScanSuccess(
         stopScanner();
 
 
+        /*
+        ----------------------------------------------------
+        BUILD TRAY URL
+        ----------------------------------------------------
+        */
+
         const trayURL =
 
             appURL +
@@ -1189,6 +1430,12 @@ function onScanSuccess(
 
             encodeURIComponent(
                 remarks
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
             );
 
 
@@ -1217,7 +1464,6 @@ function onScanSuccess(
     ========================================================
     */
 
-
     if (
         scanType === "batch"
     ) {
@@ -1243,6 +1489,12 @@ function onScanSuccess(
         stopScanner();
 
 
+        /*
+        ----------------------------------------------------
+        BUILD BATCH URL
+        ----------------------------------------------------
+        */
+
         const batchURL =
 
             appURL +
@@ -1253,6 +1505,12 @@ function onScanSuccess(
 
             encodeURIComponent(
                 scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
             );
 
 
@@ -1280,7 +1538,6 @@ function onScanSuccess(
     UNKNOWN
     ========================================================
     */
-
 
     document.getElementById(
         "message"
