@@ -8,41 +8,191 @@
 
 <title>RRP QR Scanner</title>
 
+
+<!-- =====================================================
+     GOOGLE IDENTITY SERVICES
+     ===================================================== -->
+
+<script src="https://accounts.google.com/gsi/client"
+        async
+        defer>
+</script>
+
+
+<!-- =====================================================
+     HTML5 QR CODE
+     ===================================================== -->
+
 <script src="https://unpkg.com/html5-qrcode"></script>
+
 
 <style>
 
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f2f2f2;
+* {
+    box-sizing: border-box;
 }
+
+
+body {
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    margin: 0;
+
+    padding: 20px;
+
+    background: #f2f2f2;
+
+}
+
 
 .container {
+
     max-width: 500px;
+
     margin: auto;
+
     background: white;
+
     padding: 20px;
+
     border-radius: 12px;
+
 }
+
 
 h2 {
+
     text-align: center;
+
+    margin-top: 5px;
+
 }
+
+
+#loginSection {
+
+    text-align: center;
+
+    padding: 15px 0 20px 0;
+
+}
+
+
+#loginTitle {
+
+    font-size: 18px;
+
+    font-weight: bold;
+
+    margin-bottom: 15px;
+
+}
+
+
+#loginMessage {
+
+    margin-top: 15px;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+}
+
+
+#userInfo {
+
+    display: none;
+
+    background: #eef6ff;
+
+    border-radius: 8px;
+
+    padding: 10px;
+
+    margin-bottom: 15px;
+
+    font-size: 14px;
+
+    text-align: center;
+
+}
+
 
 #reader {
+
     width: 100%;
+
     margin-top: 20px;
+
 }
 
-#message {
-    text-align: center;
-    margin-top: 15px;
-    font-weight: bold;
-    word-break: break-word;
-    line-height: 1.5;
+
+#scannerSection {
+
+    display: none;
+
 }
+
+
+#message {
+
+    text-align: center;
+
+    margin-top: 15px;
+
+    font-weight: bold;
+
+    word-break: break-word;
+
+    line-height: 1.5;
+
+}
+
+
+.error {
+
+    color: #c62828;
+
+}
+
+
+.success {
+
+    color: #2e7d32;
+
+}
+
+
+.info {
+
+    color: #555;
+
+}
+
+
+.logout {
+
+    margin-top: 10px;
+
+    padding: 8px 15px;
+
+    border: none;
+
+    border-radius: 6px;
+
+    background: #777;
+
+    color: white;
+
+    cursor: pointer;
+
+}
+
 
 </style>
 
@@ -51,309 +201,1093 @@ h2 {
 
 <body>
 
+
 <div class="container">
 
-    <h2>RRP QR SCANNER</h2>
 
-    <div id="reader"></div>
+    <h2>
+        RRP QR SCANNER
+    </h2>
 
-    <div id="message">
-        Starting camera...
+
+    <!-- =================================================
+         LOGIN
+         ================================================= -->
+
+    <div id="loginSection">
+
+
+        <div id="loginTitle">
+
+            Sign in to RRP ERP
+
+        </div>
+
+
+        <div id="googleButton">
+
+            Loading Google Login...
+
+        </div>
+
+
+        <div id="loginMessage"
+             class="info">
+
+            Please sign in with your authorized
+            Google account.
+
+        </div>
+
+
     </div>
+
+
+    <!-- =================================================
+         USER INFORMATION
+         ================================================= -->
+
+    <div id="userInfo">
+
+        <div id="userName"></div>
+
+        <div id="userEmail"></div>
+
+        <div id="userRoles"></div>
+
+
+        <button
+            class="logout"
+            onclick="logoutUser()">
+
+            Sign Out
+
+        </button>
+
+    </div>
+
+
+    <!-- =================================================
+         SCANNER
+         ================================================= -->
+
+    <div id="scannerSection">
+
+
+        <div id="reader"></div>
+
+
+        <div id="message">
+
+            Starting camera...
+
+        </div>
+
+
+    </div>
+
 
 </div>
 
 
+
 <script>
 
-/*
-====================================================
-READ CURRENT URL
-====================================================
-*/
-
-const currentURL =
-    new URL(window.location.href);
-
-const params =
-    currentURL.searchParams;
-
 
 /*
-====================================================
-READ PARAMETERS
-====================================================
+============================================================
+CONFIGURATION
+============================================================
 */
 
-const scanType =
-    params.get("type") || "part";
 
-const existingPart =
-    params.get("part") || "";
+const GOOGLE_CLIENT_ID =
 
-const supplyDate =
-    params.get("supplyDate") || "";
+    "645915267179-jg8ajdaq408hgok69t4v3on4iv2ktlo4.apps.googleusercontent.com";
 
-const suppliedKg =
-    params.get("suppliedKg") || "";
-
-const targetQty =
-    params.get("targetQty") || "";
-
-const remarks =
-    params.get("remarks") || "";
-
-
-/*
-====================================================
-APPS SCRIPT URL
-====================================================
-*/
 
 const appURL =
+
     "https://script.google.com/macros/s/" +
+
     "AKfycby4Yd5jYEhDl8_FcQ4dUt3EAe_LIGQwfcVcJBQBqb473fOizp3MicxNNXNckuOgKWatFA" +
+
     "/exec";
 
 
 /*
-====================================================
-SHOW SCAN MODE
-====================================================
+============================================================
+READ CURRENT URL
+============================================================
 */
 
-if (scanType === "tray") {
 
-    document.getElementById("message").innerHTML =
-        "📦 Point the camera at the TRAY QR";
+const currentURL =
 
-}
-else if (scanType === "batch") {
+    new URL(
+        window.location.href
+    );
 
-    document.getElementById("message").innerHTML =
-        "🏷️ Point the camera at the SUPPLY QR";
 
-}
-else {
+const params =
 
-    document.getElementById("message").innerHTML =
-        "📷 Point the camera at the PART QR";
-
-}
+    currentURL.searchParams;
 
 
 /*
-====================================================
-CREATE SCANNER
-====================================================
+============================================================
+READ SCAN PARAMETERS
+============================================================
 */
 
-const scanner =
-    new Html5Qrcode("reader");
+
+const scanType =
+
+    params.get("type") || "part";
+
+
+const existingPart =
+
+    params.get("part") || "";
+
+
+const supplyDate =
+
+    params.get("supplyDate") || "";
+
+
+const suppliedKg =
+
+    params.get("suppliedKg") || "";
+
+
+const targetQty =
+
+    params.get("targetQty") || "";
+
+
+const remarks =
+
+    params.get("remarks") || "";
 
 
 /*
-====================================================
-PREVENT MULTIPLE SCANS
-====================================================
+============================================================
+GLOBAL VARIABLES
+============================================================
 */
+
+
+let scanner = null;
 
 let scanLocked = false;
 
 
 /*
-====================================================
-QR SCAN SUCCESS
-====================================================
+============================================================
+INITIALIZE GOOGLE LOGIN
+============================================================
 */
 
-function onScanSuccess(decodedText) {
 
-    if (scanLocked) {
-        return;
+window.addEventListener(
+
+    "load",
+
+    function() {
+
+        initializeGoogleLogin();
+
     }
+
+);
+
+
+/*
+============================================================
+GOOGLE LOGIN
+============================================================
+*/
+
+
+function initializeGoogleLogin() {
+
+
+    /*
+    --------------------------------------------------------
+    WAIT FOR GOOGLE LIBRARY
+    --------------------------------------------------------
+    */
+
+    if (
+
+        typeof google === "undefined" ||
+
+        !google.accounts ||
+
+        !google.accounts.id
+
+    ) {
+
+
+        setTimeout(
+
+            initializeGoogleLogin,
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    GOOGLE INITIALIZE
+    --------------------------------------------------------
+    */
+
+    google.accounts.id.initialize({
+
+        client_id:
+            GOOGLE_CLIENT_ID,
+
+        callback:
+            handleGoogleLogin
+
+    });
+
+
+    /*
+    --------------------------------------------------------
+    SHOW GOOGLE BUTTON
+    --------------------------------------------------------
+    */
+
+    google.accounts.id.renderButton(
+
+        document.getElementById(
+            "googleButton"
+        ),
+
+        {
+
+            theme:
+                "outline",
+
+            size:
+                "large",
+
+            text:
+                "signin_with",
+
+            shape:
+                "rectangular",
+
+            width:
+                300
+
+        }
+
+    );
+
+}
+
+
+/*
+============================================================
+GOOGLE LOGIN SUCCESS
+============================================================
+*/
+
+
+function handleGoogleLogin(response) {
+
+
+    if (
+        !response ||
+        !response.credential
+    ) {
+
+        showLoginError(
+            "Google login failed."
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        "loginMessage"
+    ).innerHTML =
+
+        "Checking your RRP account...";
+
+
+    document.getElementById(
+        "loginMessage"
+    ).className =
+        "info";
+
+
+    /*
+    ========================================================
+    SEND GOOGLE TOKEN TO APPS SCRIPT
+    ========================================================
+    */
+
+    submitAuthentication(
+
+        response.credential
+
+    );
+
+}
+
+
+/*
+============================================================
+SEND AUTHENTICATION TO APPS SCRIPT
+============================================================
+*/
+
+
+function submitAuthentication(
+    googleToken
+) {
+
+
+    /*
+    --------------------------------------------------------
+    CREATE FORM
+    --------------------------------------------------------
+    */
+
+    const form =
+
+        document.createElement(
+            "form"
+        );
+
+
+    form.method =
+        "POST";
+
+
+    form.action =
+        appURL;
+
+
+    /*
+    --------------------------------------------------------
+    TOKEN
+    --------------------------------------------------------
+    */
+
+    const tokenInput =
+
+        document.createElement(
+            "input"
+        );
+
+
+    tokenInput.type =
+        "hidden";
+
+
+    tokenInput.name =
+        "googleToken";
+
+
+    tokenInput.value =
+        googleToken;
+
+
+    form.appendChild(
+        tokenInput
+    );
+
+
+    /*
+    --------------------------------------------------------
+    REQUESTED PAGE
+    --------------------------------------------------------
+    */
+
+    const pageInput =
+
+        document.createElement(
+            "input"
+        );
+
+
+    pageInput.type =
+        "hidden";
+
+
+    pageInput.name =
+        "page";
+
+
+    pageInput.value =
+        getRequestedPage();
+
+
+    form.appendChild(
+        pageInput
+    );
+
+
+    /*
+    --------------------------------------------------------
+    SCAN TYPE
+    --------------------------------------------------------
+    */
+
+    const typeInput =
+
+        document.createElement(
+            "input"
+        );
+
+
+    typeInput.type =
+        "hidden";
+
+
+    typeInput.name =
+        "scanType";
+
+
+    typeInput.value =
+        scanType;
+
+
+    form.appendChild(
+        typeInput
+    );
+
+
+    /*
+    --------------------------------------------------------
+    SUBMIT
+    --------------------------------------------------------
+    */
+
+    document.body.appendChild(
+        form
+    );
+
+
+    form.submit();
+
+}
+
+
+/*
+============================================================
+DETERMINE REQUESTED PAGE
+============================================================
+*/
+
+
+function getRequestedPage() {
+
+
+    /*
+    --------------------------------------------------------
+    NORMAL SCANNER
+    --------------------------------------------------------
+    */
+
+    if (
+        scanType === "production"
+    ) {
+
+        return "production";
+
+    }
+
+
+    if (
+        scanType === "batch"
+    ) {
+
+        return "batchcreate";
+
+    }
+
+
+    return "supply";
+
+}
+
+
+/*
+============================================================
+SHOW LOGIN ERROR
+============================================================
+*/
+
+
+function showLoginError(
+    message
+) {
+
+    const element =
+
+        document.getElementById(
+            "loginMessage"
+        );
+
+
+    element.innerHTML =
+
+        "❌ " +
+        escapeHtml(
+            message
+        );
+
+
+    element.className =
+        "error";
+
+}
+
+
+/*
+============================================================
+LOGOUT
+============================================================
+*/
+
+
+function logoutUser() {
+
+
+    try {
+
+        localStorage.removeItem(
+            "rrpUser"
+        );
+
+    }
+
+    catch(error) {
+
+        console.log(error);
+
+    }
+
+
+    location.reload();
+
+}
+
+
+/*
+============================================================
+START SCANNER
+============================================================
+*/
+
+
+function startScanner() {
+
+
+    document.getElementById(
+        "loginSection"
+    ).style.display =
+        "none";
+
+
+    document.getElementById(
+        "scannerSection"
+    ).style.display =
+        "block";
+
+
+    /*
+    --------------------------------------------------------
+    SHOW SCAN MODE
+    --------------------------------------------------------
+    */
+
+    showScanMessage();
+
+
+    /*
+    --------------------------------------------------------
+    CREATE SCANNER
+    --------------------------------------------------------
+    */
+
+    scanner =
+
+        new Html5Qrcode(
+            "reader"
+        );
+
+
+    /*
+    --------------------------------------------------------
+    GET CAMERAS
+    --------------------------------------------------------
+    */
+
+    Html5Qrcode.getCameras()
+
+    .then(
+
+        function(cameras) {
+
+
+            if (
+
+                !cameras ||
+
+                cameras.length === 0
+
+            ) {
+
+                document.getElementById(
+                    "message"
+                ).innerHTML =
+
+                    "❌ No camera found.";
+
+                return;
+
+            }
+
+
+            /*
+            ----------------------------------------------
+            USE FIRST CAMERA
+            ----------------------------------------------
+            */
+
+            const cameraId =
+                cameras[0].id;
+
+
+            /*
+            ----------------------------------------------
+            START CAMERA
+            ----------------------------------------------
+            */
+
+            scanner.start(
+
+                cameraId,
+
+                {
+
+                    fps: 10,
+
+                    qrbox: {
+
+                        width: 250,
+
+                        height: 250
+
+                    }
+
+                },
+
+                onScanSuccess
+
+            )
+
+            .then(
+
+                function() {
+
+                    showScanMessage();
+
+                }
+
+            )
+
+            .catch(
+
+                function(error) {
+
+                    document.getElementById(
+                        "message"
+                    ).innerHTML =
+
+                        "❌ Camera error:<br>" +
+
+                        escapeHtml(
+                            error
+                        );
+
+                }
+
+            );
+
+        }
+
+    )
+
+    .catch(
+
+        function(error) {
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "❌ Unable to access camera:<br>" +
+
+                escapeHtml(
+                    error
+                );
+
+        }
+
+    );
+
+}
+
+
+/*
+============================================================
+SHOW SCAN MESSAGE
+============================================================
+*/
+
+
+function showScanMessage() {
+
+
+    const message =
+
+        document.getElementById(
+            "message"
+        );
+
+
+    if (
+        scanType === "tray"
+    ) {
+
+        message.innerHTML =
+
+            "📦 Point the camera at the TRAY QR";
+
+    }
+
+    else if (
+        scanType === "batch"
+    ) {
+
+        message.innerHTML =
+
+            "🏷️ Point the camera at the SUPPLY QR";
+
+    }
+
+    else {
+
+        message.innerHTML =
+
+            "📷 Point the camera at the PART QR";
+
+    }
+
+}
+
+
+/*
+============================================================
+QR SCAN SUCCESS
+============================================================
+*/
+
+
+function onScanSuccess(
+    decodedText
+) {
+
+
+    if (
+        scanLocked
+    ) {
+
+        return;
+
+    }
+
 
     scanLocked = true;
 
 
     const scannedValue =
+
         decodedText.trim();
 
 
     /*
-    ==================================================
+    ========================================================
     PART QR
-    ==================================================
+    ========================================================
     */
 
-    if (scanType === "part") {
 
-        document.getElementById("message").innerHTML =
+    if (
+        scanType === "part"
+    ) {
+
+
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
             "✅ Part QR scanned<br><br>" +
+
             "Part: <b>" +
-            escapeHtml(scannedValue) +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
             "</b><br><br>" +
+
             "Loading Supply Page...";
 
 
-        scanner.stop().catch(
-            function() {}
-        );
+        stopScanner();
 
 
         const partURL =
+
             appURL +
+
             "?page=supply" +
+
             "&part=" +
-            encodeURIComponent(scannedValue);
+
+            encodeURIComponent(
+                scannedValue
+            );
 
 
         setTimeout(
+
             function() {
 
                 window.location.href =
                     partURL;
 
             },
+
             500
+
         );
 
+
         return;
+
     }
 
 
     /*
-    ==================================================
+    ========================================================
     TRAY QR
-    ==================================================
+    ========================================================
     */
 
-    if (scanType === "tray") {
+
+    if (
+        scanType === "tray"
+    ) {
 
 
-        if (!existingPart) {
+        if (
+            !existingPart
+        ) {
 
-            document.getElementById("message").innerHTML =
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
                 "❌ Part number is missing.";
+
 
             scanLocked = false;
 
+
             return;
+
         }
 
 
-        document.getElementById("message").innerHTML =
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
             "✅ Tray QR scanned<br><br>" +
+
             "Tray: <b>" +
-            escapeHtml(scannedValue) +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
             "</b><br><br>" +
+
             "Returning to Supply Page...";
 
 
-        scanner.stop().catch(
-            function() {}
-        );
+        stopScanner();
 
 
         const trayURL =
+
             appURL +
+
             "?page=supply" +
 
             "&part=" +
-            encodeURIComponent(existingPart) +
+
+            encodeURIComponent(
+                existingPart
+            ) +
 
             "&tray=" +
-            encodeURIComponent(scannedValue) +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
 
             "&supplyDate=" +
-            encodeURIComponent(supplyDate) +
+
+            encodeURIComponent(
+                supplyDate
+            ) +
 
             "&suppliedKg=" +
-            encodeURIComponent(suppliedKg) +
+
+            encodeURIComponent(
+                suppliedKg
+            ) +
 
             "&targetQty=" +
-            encodeURIComponent(targetQty) +
+
+            encodeURIComponent(
+                targetQty
+            ) +
 
             "&remarks=" +
-            encodeURIComponent(remarks);
+
+            encodeURIComponent(
+                remarks
+            );
 
 
         setTimeout(
+
             function() {
 
                 window.location.href =
                     trayURL;
 
             },
+
             500
+
         );
 
+
         return;
+
     }
 
 
     /*
-    ==================================================
+    ========================================================
     BATCH / SUPPLY QR
-    ==================================================
+    ========================================================
     */
 
-    if (scanType === "batch") {
 
-        document.getElementById("message").innerHTML =
+    if (
+        scanType === "batch"
+    ) {
+
+
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
             "✅ SUPPLY QR SCANNED<br><br>" +
+
             "QR: <b>" +
-            escapeHtml(scannedValue) +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
             "</b><br><br>" +
+
             "Returning to Batch Page...";
 
 
-        scanner.stop().catch(
-            function() {}
-        );
+        stopScanner();
 
-
-        /*
-        ----------------------------------------------
-        RETURN TO BATCH CREATE PAGE
-        ----------------------------------------------
-        */
 
         const batchURL =
+
             appURL +
+
             "?page=batchcreate" +
+
             "&scan=" +
-            encodeURIComponent(scannedValue);
 
+            encodeURIComponent(
+                scannedValue
+            );
 
-        /*
-        ----------------------------------------------
-        REDIRECT
-        ----------------------------------------------
-        */
 
         setTimeout(
+
             function() {
 
                 window.location.href =
                     batchURL;
 
             },
+
             500
+
         );
 
+
         return;
+
     }
 
 
     /*
-    ==================================================
+    ========================================================
     UNKNOWN
-    ==================================================
+    ========================================================
     */
 
-    document.getElementById("message").innerHTML =
+
+    document.getElementById(
+        "message"
+    ).innerHTML =
+
         "❌ Unknown scan mode.";
+
 
     scanLocked = false;
 
@@ -361,125 +1295,76 @@ function onScanSuccess(decodedText) {
 
 
 /*
-====================================================
-GET AVAILABLE CAMERAS
-====================================================
+============================================================
+STOP SCANNER
+============================================================
 */
 
-Html5Qrcode.getCameras()
 
-.then(function(cameras) {
+function stopScanner() {
 
 
     if (
-        !cameras ||
-        cameras.length === 0
+        scanner
     ) {
 
-        document.getElementById("message").innerHTML =
-            "❌ No camera found.";
+        scanner.stop()
 
-        return;
+        .catch(
+            function() {}
+        );
 
     }
 
-
-    /*
-    ----------------------------------------------
-    USE FIRST CAMERA
-    ----------------------------------------------
-    */
-
-    const cameraId =
-        cameras[0].id;
-
-
-    /*
-    ----------------------------------------------
-    START CAMERA
-    ----------------------------------------------
-    */
-
-    scanner.start(
-
-        cameraId,
-
-        {
-            fps: 10,
-
-            qrbox: {
-                width: 250,
-                height: 250
-            }
-        },
-
-        onScanSuccess
-
-    )
-
-
-    .then(function() {
-
-
-        if (scanType === "tray") {
-
-            document.getElementById("message").innerHTML =
-                "📦 Point the camera at the TRAY QR";
-
-        }
-        else if (scanType === "batch") {
-
-            document.getElementById("message").innerHTML =
-                "🏷️ Point the camera at the SUPPLY QR";
-
-        }
-        else {
-
-            document.getElementById("message").innerHTML =
-                "📷 Point the camera at the PART QR";
-
-        }
-
-    })
-
-
-    .catch(function(error) {
-
-        document.getElementById("message").innerHTML =
-            "❌ Camera error:<br>" +
-            error;
-
-    });
-
-})
-
-
-.catch(function(error) {
-
-    document.getElementById("message").innerHTML =
-        "❌ Unable to access camera:<br>" +
-        error;
-
-});
+}
 
 
 /*
-====================================================
+============================================================
 ESCAPE HTML
-====================================================
+============================================================
 */
 
-function escapeHtml(value) {
 
-    return String(value == null ? "" : value)
+function escapeHtml(
+    value
+) {
 
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(
+
+        value == null
+            ? ""
+            : value
+
+    )
+
+    .replace(
+        /&/g,
+        "&amp;"
+    )
+
+    .replace(
+        /</g,
+        "&lt;"
+    )
+
+    .replace(
+        />/g,
+        "&gt;"
+    )
+
+    .replace(
+        /"/g,
+        "&quot;"
+    )
+
+    .replace(
+        /'/g,
+        "&#039;"
+    );
 
 }
+
 
 </script>
 
