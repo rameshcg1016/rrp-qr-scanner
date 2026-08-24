@@ -1,3 +1,4 @@
+-----------index.html------------
 <!DOCTYPE html>
 <html>
 
@@ -100,27 +101,6 @@ h2 {
 
 }
 
-
-.gateway-button {
-
-    display: inline-block;
-
-    margin-top: 15px;
-
-    padding: 13px 22px;
-
-    background: #1976d2;
-
-    color: white;
-
-    text-decoration: none;
-
-    border-radius: 8px;
-
-    font-weight: bold;
-
-}
-
 </style>
 
 </head>
@@ -131,8 +111,11 @@ h2 {
 
 <div class="container">
 
+
     <h2>
+
         RRP QR SCANNER
+
     </h2>
 
 
@@ -142,9 +125,10 @@ h2 {
     <div id="message"
          class="info">
 
-        Starting...
+        Starting camera...
 
     </div>
+
 
 </div>
 
@@ -158,7 +142,7 @@ RRP APPS SCRIPT URL
 ============================================================
 */
 
-const APP_URL =
+const appURL =
 
     "https://script.google.com/macros/s/" +
 
@@ -169,18 +153,18 @@ const APP_URL =
 
 /*
 ============================================================
-GITHUB GATEWAY URL
+GITHUB SCANNER URL
 ============================================================
 */
 
-const GATEWAY_URL =
+const scannerURL =
 
     "https://rameshcg1016.github.io/rrp-qr-scanner/";
 
 
 /*
 ============================================================
-CURRENT URL
+READ CURRENT URL
 ============================================================
 */
 
@@ -198,40 +182,14 @@ const params =
 
 /*
 ============================================================
-GATEWAY MODE
+SCAN TYPE
 ============================================================
-*/
 
-const gatewayMode =
+part
+tray
+production
+batch
 
-    params.get("mode") || "";
-
-
-/*
-============================================================
-TARGET
-============================================================
-*/
-
-const encodedTarget =
-
-    params.get("target") || "";
-
-
-/*
-============================================================
-GATEWAY SESSION
-============================================================
-*/
-
-const gatewaySession =
-
-    params.get("session") || "";
-
-
-/*
-============================================================
-NORMAL SCANNER PARAMETERS
 ============================================================
 */
 
@@ -240,10 +198,22 @@ const scanType =
     params.get("type") || "part";
 
 
+/*
+============================================================
+EXISTING PART
+============================================================
+*/
+
 const existingPart =
 
     params.get("part") || "";
 
+
+/*
+============================================================
+SUPPLY DATA
+============================================================
+*/
 
 const supplyDate =
 
@@ -269,6 +239,12 @@ const remarks =
 ============================================================
 SESSION TOKEN
 ============================================================
+
+The Apps Script login creates this token.
+
+We keep it while moving through the scanner.
+
+============================================================
 */
 
 let sessionToken =
@@ -277,518 +253,36 @@ let sessionToken =
 
 
 /*
-============================================================
-READ SESSION FROM LOCAL STORAGE
-============================================================
-*/
-
-function readLocalSession() {
-
-    try {
-
-        return (
-
-            localStorage.getItem(
-                "rrpSession"
-            ) || ""
-
-        );
-
-    }
-
-    catch(error) {
-
-        return "";
-
-    }
-
-}
-
-
-/*
-============================================================
-READ SESSION FROM COOKIE
-============================================================
-*/
-
-function readCookieSession() {
-
-    try {
-
-        const cookies =
-
-            document.cookie
-                .split(";");
-
-
-        for (
-            let i = 0;
-            i < cookies.length;
-            i++
-        ) {
-
-            const cookie =
-
-                cookies[i].trim();
-
-
-            if (
-                cookie.indexOf(
-                    "rrpSession="
-                ) === 0
-            ) {
-
-                return decodeURIComponent(
-
-                    cookie.substring(
-                        "rrpSession=".length
-                    )
-
-                );
-
-            }
-
-        }
-
-    }
-
-    catch(error) {
-
-        return "";
-
-    }
-
-
-    return "";
-
-}
-
-
-/*
-============================================================
-GET SAVED SESSION
-============================================================
+------------------------------------------------------------
+IF SESSION NOT IN URL
+TRY LOCAL STORAGE
+------------------------------------------------------------
 */
 
 if (!sessionToken) {
 
     sessionToken =
-        readLocalSession();
 
-}
-
-
-if (!sessionToken) {
-
-    sessionToken =
-        readCookieSession();
+        localStorage.getItem(
+            "rrpSession"
+        ) || "";
 
 }
 
 
 /*
-============================================================
+------------------------------------------------------------
 SAVE SESSION
-============================================================
+------------------------------------------------------------
 */
 
-function saveSession(
-    token
-) {
+if (sessionToken) {
 
-    if (!token) {
+    localStorage.setItem(
 
-        return;
+        "rrpSession",
 
-    }
-
-
-    /*
-    --------------------------------------------------------
-    LOCAL STORAGE
-    --------------------------------------------------------
-    */
-
-    try {
-
-        localStorage.setItem(
-            "rrpSession",
-            token
-        );
-
-    }
-
-    catch(error) {
-
-        console.log(
-            "Local storage unavailable."
-        );
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    COOKIE
-    --------------------------------------------------------
-    */
-
-    try {
-
-        document.cookie =
-
-            "rrpSession=" +
-
-            encodeURIComponent(
-                token
-            ) +
-
-            "; path=/" +
-
-            "; max-age=21600" +
-
-            "; SameSite=Lax";
-
-    }
-
-    catch(error) {
-
-        console.log(
-            "Cookie storage unavailable."
-        );
-
-    }
-
-}
-
-
-/*
-============================================================
-GET TARGET FROM BASE64
-============================================================
-*/
-
-function getTargetURL() {
-
-    if (!encodedTarget) {
-
-        return "";
-
-    }
-
-
-    try {
-
-        return atob(
-            encodedTarget
-        );
-
-    }
-
-    catch(error) {
-
-        try {
-
-            return atob(
-                decodeURIComponent(
-                    encodedTarget
-                )
-            );
-
-        }
-
-        catch(error2) {
-
-            return "";
-
-        }
-
-    }
-
-}
-
-
-/*
-============================================================
-CREATE FINAL APPS SCRIPT URL
-============================================================
-*/
-
-function createFinalAppURL(
-    targetURL,
-    token
-) {
-
-    if (!targetURL) {
-
-        return "";
-
-    }
-
-
-    try {
-
-        const sourceURL =
-
-            new URL(
-                targetURL
-            );
-
-
-        const finalURL =
-
-            new URL(
-                APP_URL
-            );
-
-
-        /*
-        ----------------------------------------------------
-        COPY ORIGINAL PARAMETERS
-        ----------------------------------------------------
-        */
-
-        sourceURL.searchParams.forEach(
-
-            function(
-                value,
-                key
-            ) {
-
-                if (
-
-                    key === "session" ||
-
-                    key === "rrpGateway" ||
-
-                    key === "gatewayReturn"
-
-                ) {
-
-                    return;
-
-                }
-
-
-                finalURL.searchParams.set(
-                    key,
-                    value
-                );
-
-            }
-
-        );
-
-
-        /*
-        ----------------------------------------------------
-        ADD SESSION
-        ----------------------------------------------------
-        */
-
-        if (token) {
-
-            finalURL.searchParams.set(
-                "session",
-                token
-            );
-
-        }
-
-
-        return finalURL.toString();
-
-    }
-
-    catch(error) {
-
-        return "";
-
-    }
-
-}
-
-
-/*
-============================================================
-CREATE LOGIN URL
-============================================================
-*/
-
-function createLoginURL(
-    targetURL
-) {
-
-    try {
-
-        const url =
-
-            new URL(
-                targetURL
-            );
-
-
-        /*
-        ----------------------------------------------------
-        GATEWAY FLAG
-        ----------------------------------------------------
-        */
-
-        url.searchParams.set(
-            "rrpGateway",
-            "1"
-        );
-
-
-        /*
-        ----------------------------------------------------
-        RETURN TO GITHUB
-        ----------------------------------------------------
-        */
-
-        url.searchParams.set(
-            "gatewayReturn",
-            GATEWAY_URL
-        );
-
-
-        return url.toString();
-
-    }
-
-    catch(error) {
-
-        return "";
-
-    }
-
-}
-
-
-/*
-============================================================
-GATEWAY ENTRY
-============================================================
-*/
-
-function openGatewayTarget() {
-
-
-    const targetURL =
-
-        getTargetURL();
-
-
-    /*
-    --------------------------------------------------------
-    TARGET REQUIRED
-    --------------------------------------------------------
-    */
-
-    if (!targetURL) {
-
-        showError(
-            "❌ Gateway target URL is missing."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    ========================================================
-    SAVED SESSION
-    ========================================================
-    */
-
-    if (sessionToken) {
-
-
-        const finalURL =
-
-            createFinalAppURL(
-                targetURL,
-                sessionToken
-            );
-
-
-        if (!finalURL) {
-
-            showError(
-                "❌ Unable to create ERP URL."
-            );
-
-            return;
-
-        }
-
-
-        showSuccess(
-
-            "Opening RRP ERP..."
-
-        );
-
-
-        setTimeout(
-
-            function() {
-
-                window.location.href =
-                    finalURL;
-
-            },
-
-            300
-
-        );
-
-
-        return;
-
-    }
-
-
-    /*
-    ========================================================
-    NO SESSION
-    ========================================================
-    */
-
-    const loginURL =
-
-        createLoginURL(
-            targetURL
-        );
-
-
-    if (!loginURL) {
-
-        showError(
-            "❌ Unable to create Login URL."
-        );
-
-        return;
-
-    }
-
-
-    showInfo(
-        "Opening RRP Login..."
-    );
-
-
-    setTimeout(
-
-        function() {
-
-            window.location.href =
-                loginURL;
-
-        },
-
-        300
+        sessionToken
 
     );
 
@@ -797,358 +291,13 @@ function openGatewayTarget() {
 
 /*
 ============================================================
-GATEWAY LOGIN CALLBACK
-============================================================
-
-Expected:
-
-?mode=gateway-login
-&session=XXXXX
-&target=BASE64
-
+SCANNER
 ============================================================
 */
 
-function handleGatewayLogin() {
+let scanner = null;
 
-
-    /*
-    --------------------------------------------------------
-    SESSION REQUIRED
-    --------------------------------------------------------
-    */
-
-    if (!gatewaySession) {
-
-        showError(
-            "❌ Login session was not received."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    SAVE SESSION
-    --------------------------------------------------------
-    */
-
-    saveSession(
-        gatewaySession
-    );
-
-
-    sessionToken =
-        gatewaySession;
-
-
-    /*
-    --------------------------------------------------------
-    TARGET
-    --------------------------------------------------------
-    */
-
-    const targetURL =
-
-        getTargetURL();
-
-
-    if (!targetURL) {
-
-        showError(
-            "❌ Gateway target is missing."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    FINAL ERP URL
-    --------------------------------------------------------
-    */
-
-    const finalURL =
-
-        createFinalAppURL(
-            targetURL,
-            gatewaySession
-        );
-
-
-    if (!finalURL) {
-
-        showError(
-            "❌ Unable to create final ERP URL."
-        );
-
-        return;
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    SUCCESS
-    --------------------------------------------------------
-    */
-
-    showSuccess(
-
-        "✅ Login successful.<br><br>" +
-
-        "Opening RRP ERP..."
-
-    );
-
-
-    /*
-    --------------------------------------------------------
-    FALLBACK BUTTON
-    --------------------------------------------------------
-    */
-
-    const message =
-
-        document.getElementById(
-            "message"
-        );
-
-
-    const link =
-
-        document.createElement(
-            "a"
-        );
-
-
-    link.href =
-        finalURL;
-
-
-    link.target =
-        "_top";
-
-
-    link.className =
-        "gateway-button";
-
-
-    link.textContent =
-        "OPEN RRP ERP";
-
-
-    message.appendChild(
-        document.createElement("br")
-    );
-
-
-    message.appendChild(
-        link
-    );
-
-
-    /*
-    --------------------------------------------------------
-    AUTOMATIC REDIRECT
-    --------------------------------------------------------
-    */
-
-    setTimeout(
-
-        function() {
-
-            window.location.href =
-                finalURL;
-
-        },
-
-        500
-
-    );
-
-}
-
-
-/*
-============================================================
-GATEWAY MUST RUN BEFORE CAMERA
-============================================================
-*/
-
-if (
-    gatewayMode === "gateway"
-) {
-
-    openGatewayTarget();
-
-}
-
-
-else if (
-    gatewayMode === "gateway-login"
-) {
-
-    handleGatewayLogin();
-
-}
-
-
-else {
-
-    startNormalScanner();
-
-}
-
-
-/*
-============================================================
-NORMAL SCANNER
-============================================================
-*/
-
-function startNormalScanner() {
-
-
-    showScanMessage();
-
-
-    const scanner =
-
-        new Html5Qrcode(
-            "reader"
-        );
-
-
-    let scanLocked = false;
-
-
-    Html5Qrcode.getCameras()
-
-        .then(
-
-            function(cameras) {
-
-
-                if (
-                    !cameras ||
-                    cameras.length === 0
-                ) {
-
-                    showError(
-                        "❌ No camera found."
-                    );
-
-                    return;
-
-                }
-
-
-                const cameraId =
-
-                    cameras[0].id;
-
-
-                scanner.start(
-
-                    cameraId,
-
-                    {
-
-                        fps: 10,
-
-                        qrbox: {
-
-                            width: 250,
-
-                            height: 250
-
-                        }
-
-                    },
-
-                    function(decodedText) {
-
-
-                        if (
-                            scanLocked
-                        ) {
-
-                            return;
-
-                        }
-
-
-                        scanLocked = true;
-
-
-                        onScanSuccess(
-
-                            decodedText,
-
-                            scanner
-
-                        );
-
-                    }
-
-                )
-
-                .then(
-
-                    function() {
-
-                        showScanMessage();
-
-                    }
-
-                )
-
-                .catch(
-
-                    function(error) {
-
-                        showError(
-
-                            "❌ Camera error:<br>" +
-
-                            escapeHtml(
-                                error
-                            )
-
-                        );
-
-                    }
-
-                );
-
-            }
-
-        )
-
-        .catch(
-
-            function(error) {
-
-                showError(
-
-                    "❌ Unable to access camera:<br>" +
-
-                    escapeHtml(
-                        error
-                    )
-
-                );
-
-            }
-
-        );
-
-}
+let scanLocked = false;
 
 
 /*
@@ -1172,6 +321,7 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
+
             "📦 Point the camera at the TRAY QR";
 
     }
@@ -1181,6 +331,7 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
+
             "🏭 Point the camera at the SUPPLY QR";
 
     }
@@ -1190,6 +341,7 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
+
             "🏷️ Point the camera at the SUPPLY QR";
 
     }
@@ -1197,6 +349,7 @@ function showScanMessage() {
     else {
 
         message.innerHTML =
+
             "📷 Point the camera at the PART QR";
 
     }
@@ -1206,26 +359,176 @@ function showScanMessage() {
 
 /*
 ============================================================
+INITIAL MESSAGE
+============================================================
+*/
+
+showScanMessage();
+
+
+/*
+============================================================
+START SCANNER
+============================================================
+*/
+
+scanner =
+
+    new Html5Qrcode(
+        "reader"
+    );
+
+
+Html5Qrcode.getCameras()
+
+.then(
+
+    function(cameras) {
+
+
+        if (
+            !cameras ||
+            cameras.length === 0
+        ) {
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "❌ No camera found.";
+
+            return;
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        USE FIRST CAMERA
+        ----------------------------------------------------
+        */
+
+        const cameraId =
+
+            cameras[0].id;
+
+
+        /*
+        ----------------------------------------------------
+        START CAMERA
+        ----------------------------------------------------
+        */
+
+        scanner.start(
+
+            cameraId,
+
+            {
+
+                fps: 10,
+
+                qrbox: {
+
+                    width: 250,
+
+                    height: 250
+
+                }
+
+            },
+
+            onScanSuccess
+
+        )
+
+        .then(
+
+            function() {
+
+                showScanMessage();
+
+            }
+
+        )
+
+        .catch(
+
+            function(error) {
+
+                document.getElementById(
+                    "message"
+                ).innerHTML =
+
+                    "❌ Camera error:<br>" +
+
+                    escapeHtml(
+                        error
+                    );
+
+            }
+
+        );
+
+    }
+
+)
+
+.catch(
+
+    function(error) {
+
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
+            "❌ Unable to access camera:<br>" +
+
+            escapeHtml(
+                error
+            );
+
+    }
+
+);
+
+
+/*
+============================================================
 QR SCAN SUCCESS
 ============================================================
 */
 
 function onScanSuccess(
-    decodedText,
-    scanner
+    decodedText
 ) {
+
+
+    /*
+    --------------------------------------------------------
+    PREVENT MULTIPLE SCANS
+    --------------------------------------------------------
+    */
+
+    if (
+        scanLocked
+    ) {
+
+        return;
+
+    }
+
+
+    scanLocked = true;
 
 
     const scannedValue =
 
-        String(
-            decodedText || ""
-        ).trim();
+        decodedText.trim();
 
 
     /*
     ========================================================
-    TRY URL
+    TRY TO INTERPRET QR AS URL
     ========================================================
     */
 
@@ -1251,7 +554,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    PRODUCTION
+    PRODUCTION QR
     ========================================================
     */
 
@@ -1260,11 +563,19 @@ function onScanSuccess(
     ) {
 
 
-        if (!scannedURL) {
+        if (
+            !scannedURL
+        ) {
 
             showError(
-                "❌ Invalid Supply QR."
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "Please scan the Supply QR generated by RRP."
+
             );
+
+            scanLocked = false;
 
             return;
 
@@ -1291,8 +602,14 @@ function onScanSuccess(
         ) {
 
             showError(
-                "❌ Invalid Supply QR."
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "Please scan the correct Supply QR."
+
             );
+
+            scanLocked = false;
 
             return;
 
@@ -1316,14 +633,12 @@ function onScanSuccess(
         );
 
 
-        stopScanner(
-            scanner
-        );
+        stopScanner();
 
 
-        let productionURL =
+        const productionURL =
 
-            APP_URL +
+            appURL +
 
             "?page=production" +
 
@@ -1331,13 +646,11 @@ function onScanSuccess(
 
             encodeURIComponent(
                 supplyID
-            );
+            ) +
 
+            "&session=" +
 
-        productionURL =
-
-            addSessionToURL(
-                productionURL,
+            encodeURIComponent(
                 sessionToken
             );
 
@@ -1347,6 +660,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     productionURL;
 
             },
@@ -1363,7 +677,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    PART
+    PART QR
     ========================================================
     */
 
@@ -1389,14 +703,12 @@ function onScanSuccess(
         );
 
 
-        stopScanner(
-            scanner
-        );
+        stopScanner();
 
 
-        let partURL =
+        const partURL =
 
-            APP_URL +
+            appURL +
 
             "?page=supply" +
 
@@ -1404,13 +716,11 @@ function onScanSuccess(
 
             encodeURIComponent(
                 scannedValue
-            );
+            ) +
 
+            "&session=" +
 
-        partURL =
-
-            addSessionToURL(
-                partURL,
+            encodeURIComponent(
                 sessionToken
             );
 
@@ -1420,6 +730,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     partURL;
 
             },
@@ -1436,7 +747,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    TRAY
+    TRAY QR
     ========================================================
     */
 
@@ -1445,11 +756,15 @@ function onScanSuccess(
     ) {
 
 
-        if (!existingPart) {
+        if (
+            !existingPart
+        ) {
 
             showError(
                 "❌ Part number is missing."
             );
+
+            scanLocked = false;
 
             return;
 
@@ -1473,14 +788,12 @@ function onScanSuccess(
         );
 
 
-        stopScanner(
-            scanner
-        );
+        stopScanner();
 
 
-        let trayURL =
+        const trayURL =
 
-            APP_URL +
+            appURL +
 
             "?page=supply" +
 
@@ -1518,13 +831,11 @@ function onScanSuccess(
 
             encodeURIComponent(
                 remarks
-            );
+            ) +
 
+            "&session=" +
 
-        trayURL =
-
-            addSessionToURL(
-                trayURL,
+            encodeURIComponent(
                 sessionToken
             );
 
@@ -1534,6 +845,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     trayURL;
 
             },
@@ -1550,7 +862,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    BATCH
+    BATCH / SUPPLY QR
     ========================================================
     */
 
@@ -1559,11 +871,19 @@ function onScanSuccess(
     ) {
 
 
-        if (!scannedURL) {
+        if (
+            !scannedURL
+        ) {
 
             showError(
-                "❌ Invalid Supply QR."
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "Please scan the Supply QR."
+
             );
+
+            scanLocked = false;
 
             return;
 
@@ -1590,8 +910,14 @@ function onScanSuccess(
         ) {
 
             showError(
-                "❌ Invalid Supply QR."
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "The QR must contain a valid Supply ID."
+
             );
+
+            scanLocked = false;
 
             return;
 
@@ -1615,14 +941,12 @@ function onScanSuccess(
         );
 
 
-        stopScanner(
-            scanner
-        );
+        stopScanner();
 
 
-        let batchURL =
+        const batchURL =
 
-            APP_URL +
+            appURL +
 
             "?page=batchcreate" +
 
@@ -1630,13 +954,11 @@ function onScanSuccess(
 
             encodeURIComponent(
                 batchSupplyID
-            );
+            ) +
 
+            "&session=" +
 
-        batchURL =
-
-            addSessionToURL(
-                batchURL,
+            encodeURIComponent(
                 sessionToken
             );
 
@@ -1646,6 +968,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     batchURL;
 
             },
@@ -1660,64 +983,18 @@ function onScanSuccess(
     }
 
 
+    /*
+    ========================================================
+    UNKNOWN SCAN MODE
+    ========================================================
+    */
+
     showError(
         "❌ Unknown scan mode."
     );
 
-}
 
-
-/*
-============================================================
-ADD SESSION TO NORMAL SCANNER URL
-============================================================
-*/
-
-function addSessionToURL(
-    targetURL,
-    token
-) {
-
-    if (!targetURL) {
-
-        return "";
-
-    }
-
-
-    try {
-
-        const url =
-
-            new URL(
-                targetURL
-            );
-
-
-        url.searchParams.delete(
-            "session"
-        );
-
-
-        if (token) {
-
-            url.searchParams.set(
-                "session",
-                token
-            );
-
-        }
-
-
-        return url.toString();
-
-    }
-
-    catch(error) {
-
-        return targetURL;
-
-    }
+    scanLocked = false;
 
 }
 
@@ -1728,22 +1005,20 @@ STOP SCANNER
 ============================================================
 */
 
-function stopScanner(
-    scanner
-) {
-
-    if (!scanner) {
-
-        return;
-
-    }
+function stopScanner() {
 
 
-    scanner.stop()
+    if (
+        scanner
+    ) {
+
+        scanner.stop()
 
         .catch(
             function() {}
         );
+
+    }
 
 }
 
@@ -1804,33 +1079,6 @@ function showSuccess(
 
 /*
 ============================================================
-SHOW INFO
-============================================================
-*/
-
-function showInfo(
-    message
-) {
-
-    const element =
-
-        document.getElementById(
-            "message"
-        );
-
-
-    element.innerHTML =
-        message;
-
-
-    element.className =
-        "info";
-
-}
-
-
-/*
-============================================================
 ESCAPE HTML
 ============================================================
 */
@@ -1875,7 +1123,6 @@ function escapeHtml(
 }
 
 </script>
-
 
 </body>
 
