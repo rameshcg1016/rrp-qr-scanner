@@ -8,13 +8,7 @@
 
 <title>RRP QR Scanner</title>
 
-<script src="https://accounts.google.com/gsi/client"
-        async
-        defer>
-</script>
-
 <script src="https://unpkg.com/html5-qrcode"></script>
-
 
 <style>
 
@@ -37,6 +31,7 @@ body {
 
 }
 
+
 .container {
 
     max-width: 500px;
@@ -51,6 +46,7 @@ body {
 
 }
 
+
 h2 {
 
     text-align: center;
@@ -59,81 +55,6 @@ h2 {
 
 }
 
-#loginSection {
-
-    text-align: center;
-
-    padding: 15px 0 20px 0;
-
-}
-
-#loginTitle {
-
-    font-size: 18px;
-
-    font-weight: bold;
-
-    margin-bottom: 15px;
-
-}
-
-#googleButton {
-
-    display: flex;
-
-    justify-content: center;
-
-}
-
-#loginMessage {
-
-    margin-top: 15px;
-
-    font-size: 14px;
-
-    line-height: 1.5;
-
-}
-
-#userInfo {
-
-    display: none;
-
-    background: #eef6ff;
-
-    border-radius: 8px;
-
-    padding: 10px;
-
-    margin-bottom: 15px;
-
-    font-size: 14px;
-
-    text-align: center;
-
-}
-
-#userName {
-
-    font-weight: bold;
-
-    margin-bottom: 4px;
-
-}
-
-#userEmail {
-
-    margin-bottom: 4px;
-
-}
-
-#userRoles {
-
-    font-size: 13px;
-
-    color: #555;
-
-}
 
 #reader {
 
@@ -143,11 +64,6 @@ h2 {
 
 }
 
-#scannerSection {
-
-    display: none;
-
-}
 
 #message {
 
@@ -163,11 +79,13 @@ h2 {
 
 }
 
+
 .error {
 
     color: #c62828;
 
 }
+
 
 .success {
 
@@ -175,27 +93,10 @@ h2 {
 
 }
 
+
 .info {
 
     color: #555;
-
-}
-
-.logout {
-
-    margin-top: 10px;
-
-    padding: 8px 15px;
-
-    border: none;
-
-    border-radius: 6px;
-
-    background: #777;
-
-    color: white;
-
-    cursor: pointer;
 
 }
 
@@ -210,72 +111,22 @@ h2 {
 <div class="container">
 
 
-<h2>
-RRP QR SCANNER
-</h2>
+    <h2>
 
+        RRP QR SCANNER
 
-<!-- =====================================================
-     LOGIN
-     ===================================================== -->
+    </h2>
 
-<div id="loginSection">
-
-    <div id="loginTitle">
-        Sign in to RRP ERP
-    </div>
-
-    <div id="googleButton">
-        Loading Google Login...
-    </div>
-
-    <div id="loginMessage"
-         class="info">
-
-        Please sign in with your authorized
-        Google account.
-
-    </div>
-
-</div>
-
-
-<!-- =====================================================
-     USER INFORMATION
-     ===================================================== -->
-
-<div id="userInfo">
-
-    <div id="userName"></div>
-
-    <div id="userEmail"></div>
-
-    <div id="userRoles"></div>
-
-    <button
-        class="logout"
-        onclick="logoutUser()">
-
-        Sign Out
-
-    </button>
-
-</div>
-
-
-<!-- =====================================================
-     SCANNER
-     ===================================================== -->
-
-<div id="scannerSection">
 
     <div id="reader"></div>
 
-    <div id="message">
-        Starting camera...
-    </div>
 
-</div>
+    <div id="message"
+         class="info">
+
+        Starting camera...
+
+    </div>
 
 
 </div>
@@ -286,14 +137,9 @@ RRP QR SCANNER
 
 /*
 ============================================================
-CONFIGURATION
+RRP APPS SCRIPT URL
 ============================================================
 */
-
-const GOOGLE_CLIENT_ID =
-
-    "645915267179-jg8ajdaq408hgok69t4v3on4iv2ktlo4.apps.googleusercontent.com";
-
 
 const appURL =
 
@@ -303,6 +149,12 @@ const appURL =
 
     "/exec";
 
+
+/*
+============================================================
+GITHUB SCANNER URL
+============================================================
+*/
 
 const scannerURL =
 
@@ -321,6 +173,7 @@ const currentURL =
         window.location.href
     );
 
+
 const params =
 
     currentURL.searchParams;
@@ -328,7 +181,14 @@ const params =
 
 /*
 ============================================================
-SCAN PARAMETERS
+SCAN TYPE
+============================================================
+
+part
+tray
+production
+batch
+
 ============================================================
 */
 
@@ -337,10 +197,22 @@ const scanType =
     params.get("type") || "part";
 
 
+/*
+============================================================
+EXISTING PART
+============================================================
+*/
+
 const existingPart =
 
     params.get("part") || "";
 
+
+/*
+============================================================
+SUPPLY DATA
+============================================================
+*/
 
 const supplyDate =
 
@@ -364,7 +236,13 @@ const remarks =
 
 /*
 ============================================================
-SESSION
+SESSION TOKEN
+============================================================
+
+The Apps Script login creates this token.
+
+We keep it while moving through the scanner.
+
 ============================================================
 */
 
@@ -372,6 +250,13 @@ let sessionToken =
 
     params.get("session") || "";
 
+
+/*
+------------------------------------------------------------
+IF SESSION NOT IN URL
+TRY LOCAL STORAGE
+------------------------------------------------------------
+*/
 
 if (!sessionToken) {
 
@@ -384,11 +269,20 @@ if (!sessionToken) {
 }
 
 
+/*
+------------------------------------------------------------
+SAVE SESSION
+------------------------------------------------------------
+*/
+
 if (sessionToken) {
 
     localStorage.setItem(
+
         "rrpSession",
+
         sessionToken
+
     );
 
 }
@@ -396,7 +290,7 @@ if (sessionToken) {
 
 /*
 ============================================================
-SCANNER VARIABLES
+SCANNER
 ============================================================
 */
 
@@ -407,649 +301,7 @@ let scanLocked = false;
 
 /*
 ============================================================
-CURRENT USER
-============================================================
-*/
-
-let currentUser = null;
-
-
-/*
-============================================================
-PAGE LOAD
-============================================================
-*/
-
-window.addEventListener(
-
-    "load",
-
-    function() {
-
-        initializeGoogleLogin();
-
-    }
-
-);
-
-
-/*
-============================================================
-GOOGLE LOGIN
-============================================================
-*/
-
-function initializeGoogleLogin() {
-
-
-    if (
-
-        typeof google === "undefined" ||
-
-        !google.accounts ||
-
-        !google.accounts.id
-
-    ) {
-
-        setTimeout(
-
-            initializeGoogleLogin,
-
-            500
-
-        );
-
-        return;
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    GOOGLE INITIALIZE
-    --------------------------------------------------------
-    */
-
-    google.accounts.id.initialize({
-
-        client_id:
-            GOOGLE_CLIENT_ID,
-
-        callback:
-            handleGoogleLogin
-
-    });
-
-
-    /*
-    --------------------------------------------------------
-    GOOGLE BUTTON
-    --------------------------------------------------------
-    */
-
-    google.accounts.id.renderButton(
-
-        document.getElementById(
-            "googleButton"
-        ),
-
-        {
-
-            theme:
-                "outline",
-
-            size:
-                "large",
-
-            text:
-                "signin_with",
-
-            shape:
-                "rectangular",
-
-            width:
-                300
-
-        }
-
-    );
-
-
-}
-
-
-/*
-============================================================
-GOOGLE LOGIN SUCCESS
-============================================================
-*/
-
-function handleGoogleLogin(
-    response
-) {
-
-
-    if (
-        !response ||
-        !response.credential
-    ) {
-
-        showLoginError(
-            "Google login failed."
-        );
-
-        return;
-
-    }
-
-
-    document.getElementById(
-        "loginMessage"
-    ).innerHTML =
-
-        "Checking your RRP account...";
-
-
-    document.getElementById(
-        "loginMessage"
-    ).className =
-        "info";
-
-
-    submitAuthentication(
-
-        response.credential
-
-    );
-
-}
-
-
-/*
-============================================================
-SEND GOOGLE TOKEN TO APPS SCRIPT
-============================================================
-*/
-
-function submitAuthentication(
-    googleToken
-) {
-
-
-    /*
-    --------------------------------------------------------
-    DETERMINE REQUESTED PAGE
-    --------------------------------------------------------
-    */
-
-    const requestedPage =
-
-        getRequestedPage();
-
-
-    /*
-    --------------------------------------------------------
-    CREATE POST FORM
-    --------------------------------------------------------
-    */
-
-    const form =
-
-        document.createElement(
-            "form"
-        );
-
-
-    form.method =
-        "POST";
-
-
-    form.action =
-        appURL;
-
-
-    /*
-    --------------------------------------------------------
-    GOOGLE TOKEN
-    --------------------------------------------------------
-    */
-
-    const tokenInput =
-
-        document.createElement(
-            "input"
-        );
-
-
-    tokenInput.type =
-        "hidden";
-
-
-    tokenInput.name =
-        "googleToken";
-
-
-    tokenInput.value =
-        googleToken;
-
-
-    form.appendChild(
-        tokenInput
-    );
-
-
-    /*
-    --------------------------------------------------------
-    PAGE
-    --------------------------------------------------------
-    */
-
-    const pageInput =
-
-        document.createElement(
-            "input"
-        );
-
-
-    pageInput.type =
-        "hidden";
-
-
-    pageInput.name =
-        "page";
-
-
-    pageInput.value =
-        requestedPage;
-
-
-    form.appendChild(
-        pageInput
-    );
-
-
-    /*
-    --------------------------------------------------------
-    SCAN TYPE
-    --------------------------------------------------------
-    */
-
-    const typeInput =
-
-        document.createElement(
-            "input"
-        );
-
-
-    typeInput.type =
-        "hidden";
-
-
-    typeInput.name =
-        "scanType";
-
-
-    typeInput.value =
-        scanType;
-
-
-    form.appendChild(
-        typeInput
-    );
-
-
-    /*
-    --------------------------------------------------------
-    SUBMIT
-    --------------------------------------------------------
-    */
-
-    document.body.appendChild(
-        form
-    );
-
-
-    form.submit();
-
-}
-
-
-/*
-============================================================
-REQUESTED PAGE
-============================================================
-*/
-
-function getRequestedPage() {
-
-
-    /*
-    --------------------------------------------------------
-    PRODUCTION SCANNER
-    --------------------------------------------------------
-    */
-
-    if (
-        scanType === "production"
-    ) {
-
-        return "production";
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    BATCH SCANNER
-    --------------------------------------------------------
-    */
-
-    if (
-        scanType === "batch"
-    ) {
-
-        return "batchcreate";
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    DEFAULT
-    --------------------------------------------------------
-    */
-
-    return "supply";
-
-}
-
-
-/*
-============================================================
-LOGIN ERROR
-============================================================
-*/
-
-function showLoginError(
-    message
-) {
-
-    const element =
-
-        document.getElementById(
-            "loginMessage"
-        );
-
-
-    element.innerHTML =
-
-        "❌ " +
-
-        escapeHtml(
-            message
-        );
-
-
-    element.className =
-        "error";
-
-}
-
-
-/*
-============================================================
-LOGOUT
-============================================================
-*/
-
-function logoutUser() {
-
-
-    stopScanner();
-
-
-    localStorage.removeItem(
-        "rrpSession"
-    );
-
-
-    localStorage.removeItem(
-        "rrpUser"
-    );
-
-
-    sessionToken = "";
-
-    currentUser = null;
-
-
-    window.location.href =
-        scannerURL;
-
-}
-
-
-/*
-============================================================
-START SCANNER
-============================================================
-*/
-
-function startScanner() {
-
-
-    document.getElementById(
-        "loginSection"
-    ).style.display =
-        "none";
-
-
-    document.getElementById(
-        "scannerSection"
-    ).style.display =
-        "block";
-
-
-    /*
-    --------------------------------------------------------
-    USER INFO
-    --------------------------------------------------------
-    */
-
-    if (
-        currentUser
-    ) {
-
-        document.getElementById(
-            "userInfo"
-        ).style.display =
-            "block";
-
-
-        document.getElementById(
-            "userName"
-        ).innerHTML =
-
-            "👤 " +
-
-            escapeHtml(
-                currentUser.name
-            );
-
-
-        document.getElementById(
-            "userEmail"
-        ).innerHTML =
-
-            escapeHtml(
-                currentUser.email
-            );
-
-
-        document.getElementById(
-            "userRoles"
-        ).innerHTML =
-
-            "Roles: " +
-
-            escapeHtml(
-                currentUser.roles.join(
-                    ", "
-                )
-            );
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    MESSAGE
-    --------------------------------------------------------
-    */
-
-    showScanMessage();
-
-
-    /*
-    --------------------------------------------------------
-    CREATE SCANNER
-    --------------------------------------------------------
-    */
-
-    scanner =
-
-        new Html5Qrcode(
-            "reader"
-        );
-
-
-    /*
-    --------------------------------------------------------
-    GET CAMERA
-    --------------------------------------------------------
-    */
-
-    Html5Qrcode.getCameras()
-
-    .then(
-
-        function(cameras) {
-
-
-            if (
-
-                !cameras ||
-
-                cameras.length === 0
-
-            ) {
-
-                document.getElementById(
-                    "message"
-                ).innerHTML =
-
-                    "❌ No camera found.";
-
-                return;
-
-            }
-
-
-            /*
-            ----------------------------------------------
-            FIRST CAMERA
-            ----------------------------------------------
-            */
-
-            const cameraId =
-                cameras[0].id;
-
-
-            /*
-            ----------------------------------------------
-            START
-            ----------------------------------------------
-            */
-
-            scanner.start(
-
-                cameraId,
-
-                {
-
-                    fps: 10,
-
-                    qrbox: {
-
-                        width: 250,
-
-                        height: 250
-
-                    }
-
-                },
-
-                onScanSuccess
-
-            )
-
-            .then(
-
-                function() {
-
-                    showScanMessage();
-
-                }
-
-            )
-
-            .catch(
-
-                function(error) {
-
-                    document.getElementById(
-                        "message"
-                    ).innerHTML =
-
-                        "❌ Camera error:<br>" +
-
-                        escapeHtml(
-                            error
-                        );
-
-                }
-
-            );
-
-        }
-
-    )
-
-    .catch(
-
-        function(error) {
-
-            document.getElementById(
-                "message"
-            ).innerHTML =
-
-                "❌ Unable to access camera:<br>" +
-
-                escapeHtml(
-                    error
-                );
-
-        }
-
-    );
-
-}
-
-
-/*
-============================================================
-SCAN MESSAGE
+SHOW SCAN MODE
 ============================================================
 */
 
@@ -1074,22 +326,22 @@ function showScanMessage() {
     }
 
     else if (
-        scanType === "batch"
-    ) {
-
-        message.innerHTML =
-
-            "🏷️ Point the camera at the SUPPLY QR";
-
-    }
-
-    else if (
         scanType === "production"
     ) {
 
         message.innerHTML =
 
             "🏭 Point the camera at the SUPPLY QR";
+
+    }
+
+    else if (
+        scanType === "batch"
+    ) {
+
+        message.innerHTML =
+
+            "🏷️ Point the camera at the SUPPLY QR";
 
     }
 
@@ -1106,6 +358,141 @@ function showScanMessage() {
 
 /*
 ============================================================
+INITIAL MESSAGE
+============================================================
+*/
+
+showScanMessage();
+
+
+/*
+============================================================
+START SCANNER
+============================================================
+*/
+
+scanner =
+
+    new Html5Qrcode(
+        "reader"
+    );
+
+
+Html5Qrcode.getCameras()
+
+.then(
+
+    function(cameras) {
+
+
+        if (
+            !cameras ||
+            cameras.length === 0
+        ) {
+
+            document.getElementById(
+                "message"
+            ).innerHTML =
+
+                "❌ No camera found.";
+
+            return;
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        USE FIRST CAMERA
+        ----------------------------------------------------
+        */
+
+        const cameraId =
+
+            cameras[0].id;
+
+
+        /*
+        ----------------------------------------------------
+        START CAMERA
+        ----------------------------------------------------
+        */
+
+        scanner.start(
+
+            cameraId,
+
+            {
+
+                fps: 10,
+
+                qrbox: {
+
+                    width: 250,
+
+                    height: 250
+
+                }
+
+            },
+
+            onScanSuccess
+
+        )
+
+        .then(
+
+            function() {
+
+                showScanMessage();
+
+            }
+
+        )
+
+        .catch(
+
+            function(error) {
+
+                document.getElementById(
+                    "message"
+                ).innerHTML =
+
+                    "❌ Camera error:<br>" +
+
+                    escapeHtml(
+                        error
+                    );
+
+            }
+
+        );
+
+    }
+
+)
+
+.catch(
+
+    function(error) {
+
+        document.getElementById(
+            "message"
+        ).innerHTML =
+
+            "❌ Unable to access camera:<br>" +
+
+            escapeHtml(
+                error
+            );
+
+    }
+
+);
+
+
+/*
+============================================================
 QR SCAN SUCCESS
 ============================================================
 */
@@ -1114,6 +501,12 @@ function onScanSuccess(
     decodedText
 ) {
 
+
+    /*
+    --------------------------------------------------------
+    PREVENT MULTIPLE SCANS
+    --------------------------------------------------------
+    */
 
     if (
         scanLocked
@@ -1134,8 +527,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    IMPORTANT:
-    DETECT APPS SCRIPT SUPPLY URL
+    TRY TO INTERPRET QR AS URL
     ========================================================
     */
 
@@ -1145,6 +537,7 @@ function onScanSuccess(
     try {
 
         scannedURL =
+
             new URL(
                 scannedValue
             );
@@ -1160,138 +553,7 @@ function onScanSuccess(
 
     /*
     ========================================================
-    IF QR IS A URL
-    ========================================================
-    */
-
-    if (
-        scannedURL
-    ) {
-
-
-        /*
-        ----------------------------------------------------
-        GET PAGE PARAMETER
-        ----------------------------------------------------
-        */
-
-        const qrPage =
-
-            scannedURL.searchParams.get(
-                "page"
-            );
-
-
-        /*
-        ----------------------------------------------------
-        GET SUPPLY ID
-        ----------------------------------------------------
-        */
-
-        const supplyID =
-
-            scannedURL.searchParams.get(
-                "id"
-            );
-
-
-        /*
-        ====================================================
-        PRODUCTION QR
-        ====================================================
-        */
-
-        if (
-            qrPage === "production" &&
-            supplyID
-        ) {
-
-
-            document.getElementById(
-                "message"
-            ).innerHTML =
-
-                "✅ SUPPLY QR SCANNED<br><br>" +
-
-                "Supply ID: <b>" +
-
-                escapeHtml(
-                    supplyID
-                ) +
-
-                "</b><br><br>" +
-
-                "Opening Production Page...";
-
-
-            stopScanner();
-
-
-            const productionURL =
-
-                appURL +
-
-                "?page=production" +
-
-                "&id=" +
-
-                encodeURIComponent(
-                    supplyID
-                ) +
-
-                "&session=" +
-
-                encodeURIComponent(
-                    sessionToken
-                );
-
-
-            setTimeout(
-
-                function() {
-
-                    window.location.href =
-                        productionURL;
-
-                },
-
-                500
-
-            );
-
-
-            return;
-
-        }
-
-
-        /*
-        ====================================================
-        BATCH QR
-        ====================================================
-        */
-
-        if (
-            qrPage === "production" &&
-            supplyID
-        ) {
-
-
-            /*
-            This branch is normally handled by the
-            scanType === "batch" section below.
-
-            It is intentionally left here as a fallback.
-            */
-
-        }
-
-    }
-
-
-    /*
-    ========================================================
-    PRODUCTION SCAN MODE
+    PRODUCTION QR
     ========================================================
     */
 
@@ -1300,21 +562,112 @@ function onScanSuccess(
     ) {
 
 
-        /*
-        ----------------------------------------------------
-        IF QR WAS NOT THE EXPECTED URL
-        ----------------------------------------------------
-        */
+        if (
+            !scannedURL
+        ) {
 
-        document.getElementById(
-            "message"
-        ).innerHTML =
+            showError(
 
-            "❌ Invalid Supply QR.<br><br>" +
+                "❌ Invalid Supply QR.<br><br>" +
 
-            "Please scan the Supply QR generated by RRP.";
+                "Please scan the Supply QR generated by RRP."
 
-        scanLocked = false;
+            );
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        const qrPage =
+
+            scannedURL.searchParams.get(
+                "page"
+            );
+
+
+        const supplyID =
+
+            scannedURL.searchParams.get(
+                "id"
+            );
+
+
+        if (
+            qrPage !== "production" ||
+            !supplyID
+        ) {
+
+            showError(
+
+                "❌ Invalid Supply QR.<br><br>" +
+
+                "Please scan the correct Supply QR."
+
+            );
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        showSuccess(
+
+            "✅ SUPPLY QR SCANNED<br><br>" +
+
+            "Supply ID: <b>" +
+
+            escapeHtml(
+                supplyID
+            ) +
+
+            "</b><br><br>" +
+
+            "Opening Production Page..."
+
+        );
+
+
+        stopScanner();
+
+
+        const productionURL =
+
+            appURL +
+
+            "?page=production" +
+
+            "&id=" +
+
+            encodeURIComponent(
+                supplyID
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+
+                    productionURL;
+
+            },
+
+            500
+
+        );
+
 
         return;
 
@@ -1332,9 +685,7 @@ function onScanSuccess(
     ) {
 
 
-        document.getElementById(
-            "message"
-        ).innerHTML =
+        showSuccess(
 
             "✅ Part QR scanned<br><br>" +
 
@@ -1346,7 +697,9 @@ function onScanSuccess(
 
             "</b><br><br>" +
 
-            "Loading Supply Page...";
+            "Loading Supply Page..."
+
+        );
 
 
         stopScanner();
@@ -1376,6 +729,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     partURL;
 
             },
@@ -1405,25 +759,18 @@ function onScanSuccess(
             !existingPart
         ) {
 
-
-            document.getElementById(
-                "message"
-            ).innerHTML =
-
-                "❌ Part number is missing.";
-
+            showError(
+                "❌ Part number is missing."
+            );
 
             scanLocked = false;
-
 
             return;
 
         }
 
 
-        document.getElementById(
-            "message"
-        ).innerHTML =
+        showSuccess(
 
             "✅ Tray QR scanned<br><br>" +
 
@@ -1435,7 +782,9 @@ function onScanSuccess(
 
             "</b><br><br>" +
 
-            "Returning to Supply Page...";
+            "Returning to Supply Page..."
+
+        );
 
 
         stopScanner();
@@ -1495,6 +844,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     trayURL;
 
             },
@@ -1520,23 +870,17 @@ function onScanSuccess(
     ) {
 
 
-        /*
-        ----------------------------------------------------
-        QR MUST BE SUPPLY PRODUCTION URL
-        ----------------------------------------------------
-        */
-
         if (
             !scannedURL
         ) {
 
-            document.getElementById(
-                "message"
-            ).innerHTML =
+            showError(
 
                 "❌ Invalid Supply QR.<br><br>" +
 
-                "Please scan the Supply QR.";
+                "Please scan the Supply QR."
+
+            );
 
             scanLocked = false;
 
@@ -1559,25 +903,18 @@ function onScanSuccess(
             );
 
 
-        /*
-        ----------------------------------------------------
-        CHECK SUPPLY QR
-        ----------------------------------------------------
-        */
-
         if (
             batchQRPage !== "production" ||
             !batchSupplyID
         ) {
 
-
-            document.getElementById(
-                "message"
-            ).innerHTML =
+            showError(
 
                 "❌ Invalid Supply QR.<br><br>" +
 
-                "The QR must contain a valid Supply ID.";
+                "The QR must contain a valid Supply ID."
+
+            );
 
             scanLocked = false;
 
@@ -1586,9 +923,7 @@ function onScanSuccess(
         }
 
 
-        document.getElementById(
-            "message"
-        ).innerHTML =
+        showSuccess(
 
             "✅ SUPPLY QR SCANNED<br><br>" +
 
@@ -1600,17 +935,13 @@ function onScanSuccess(
 
             "</b><br><br>" +
 
-            "Opening Batch Create Page...";
+            "Opening Batch Create Page..."
+
+        );
 
 
         stopScanner();
 
-
-        /*
-        ----------------------------------------------------
-        OPEN BATCH CREATE
-        ----------------------------------------------------
-        */
 
         const batchURL =
 
@@ -1636,6 +967,7 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
+
                     batchURL;
 
             },
@@ -1652,15 +984,13 @@ function onScanSuccess(
 
     /*
     ========================================================
-    UNKNOWN
+    UNKNOWN SCAN MODE
     ========================================================
     */
 
-    document.getElementById(
-        "message"
-    ).innerHTML =
-
-        "❌ Unknown scan mode.";
+    showError(
+        "❌ Unknown scan mode."
+    );
 
 
     scanLocked = false;
@@ -1688,6 +1018,60 @@ function stopScanner() {
         );
 
     }
+
+}
+
+
+/*
+============================================================
+SHOW ERROR
+============================================================
+*/
+
+function showError(
+    message
+) {
+
+    const element =
+
+        document.getElementById(
+            "message"
+        );
+
+
+    element.innerHTML =
+        message;
+
+
+    element.className =
+        "error";
+
+}
+
+
+/*
+============================================================
+SHOW SUCCESS
+============================================================
+*/
+
+function showSuccess(
+    message
+) {
+
+    const element =
+
+        document.getElementById(
+            "message"
+        );
+
+
+    element.innerHTML =
+        message;
+
+
+    element.className =
+        "success";
 
 }
 
@@ -1737,9 +1121,7 @@ function escapeHtml(
 
 }
 
-
 </script>
-
 
 </body>
 
