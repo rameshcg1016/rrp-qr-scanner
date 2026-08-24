@@ -31,6 +31,7 @@ body {
 
 }
 
+
 .container {
 
     max-width: 500px;
@@ -45,6 +46,7 @@ body {
 
 }
 
+
 h2 {
 
     text-align: center;
@@ -53,6 +55,7 @@ h2 {
 
 }
 
+
 #reader {
 
     width: 100%;
@@ -60,6 +63,7 @@ h2 {
     margin-top: 20px;
 
 }
+
 
 #message {
 
@@ -75,17 +79,20 @@ h2 {
 
 }
 
+
 .error {
 
     color: #c62828;
 
 }
 
+
 .success {
 
     color: #2e7d32;
 
 }
+
 
 .info {
 
@@ -103,7 +110,6 @@ h2 {
 
 <div class="container">
 
-
     <h2>
         RRP QR SCANNER
     </h2>
@@ -118,7 +124,6 @@ h2 {
         Starting camera...
 
     </div>
-
 
 </div>
 
@@ -229,10 +234,6 @@ const remarks =
 ============================================================
 SESSION TOKEN
 ============================================================
-
-The Apps Script login creates this token.
-
-============================================================
 */
 
 let sessionToken =
@@ -283,11 +284,8 @@ if (sessionToken) {
     try {
 
         localStorage.setItem(
-
             "rrpSession",
-
             sessionToken
-
         );
 
     }
@@ -321,7 +319,6 @@ SHOW SCAN MODE
 */
 
 function showScanMessage() {
-
 
     const message =
 
@@ -373,27 +370,11 @@ function showScanMessage() {
 
 /*
 ============================================================
-INITIAL MESSAGE
+START REAR / BACK CAMERA
 ============================================================
 */
 
-showScanMessage();
-
-
-/*
-============================================================
-START FRONT CAMERA
-============================================================
-*/
-
-function startFrontCamera() {
-
-
-    /*
-    --------------------------------------------------------
-    CREATE SCANNER
-    --------------------------------------------------------
-    */
+function startRearCamera() {
 
     scanner =
 
@@ -404,7 +385,8 @@ function startFrontCamera() {
 
     /*
     ========================================================
-    TRY FRONT CAMERA USING facingMode
+    FIRST TRY:
+    BACK / ENVIRONMENT CAMERA
     ========================================================
     */
 
@@ -412,11 +394,12 @@ function startFrontCamera() {
 
         {
             facingMode: {
-                exact: "user"
+                exact: "environment"
             }
         },
 
         {
+
             fps: 10,
 
             qrbox: {
@@ -447,23 +430,23 @@ function startFrontCamera() {
 
         function(error) {
 
-
             console.log(
-                "Exact front camera failed:",
+                "Exact rear camera failed:",
                 error
             );
 
 
             /*
             ==================================================
-            TRY USER CAMERA WITHOUT exact
+            SECOND TRY:
+            ENVIRONMENT CAMERA
             ==================================================
             */
 
             scanner.start(
 
                 {
-                    facingMode: "user"
+                    facingMode: "environment"
                 },
 
                 {
@@ -498,20 +481,19 @@ function startFrontCamera() {
 
                 function(error2) {
 
-
                     console.log(
-                        "User camera fallback failed:",
+                        "Environment camera failed:",
                         error2
                     );
 
 
                     /*
-                    ==================================================
-                    FALLBACK TO CAMERA LIST
-                    ==================================================
+                    ==========================================
+                    FINAL FALLBACK
+                    ==========================================
                     */
 
-                    startPreferredCamera();
+                    startRearCameraFromList();
 
                 }
 
@@ -526,15 +508,47 @@ function startFrontCamera() {
 
 /*
 ============================================================
-PREFERRED CAMERA FROM CAMERA LIST
+FALLBACK:
+FIND REAR CAMERA FROM CAMERA LIST
 ============================================================
 */
 
-function startPreferredCamera() {
+function startRearCameraFromList() {
+
+    /*
+    If a scanner instance is already active/partially active,
+    stop it first.
+    */
+
+    try {
+
+        if (scanner) {
+
+            scanner.stop().catch(
+                function() {}
+            );
+
+        }
+
+    }
+
+    catch(error) {}
 
 
-    Html5Qrcode
-        .getCameras()
+    /*
+    --------------------------------------------------------
+    CREATE FRESH SCANNER
+    --------------------------------------------------------
+    */
+
+    scanner =
+
+        new Html5Qrcode(
+            "reader"
+        );
+
+
+    Html5Qrcode.getCameras()
 
         .then(
 
@@ -542,18 +556,13 @@ function startPreferredCamera() {
 
 
                 if (
-
                     !cameras ||
-
                     cameras.length === 0
-
                 ) {
 
-                    document.getElementById(
-                        "message"
-                    ).innerHTML =
-
-                        "❌ No camera found.";
+                    showError(
+                        "❌ No camera found."
+                    );
 
                     return;
 
@@ -561,12 +570,12 @@ function startPreferredCamera() {
 
 
                 /*
-                ------------------------------------------------
-                FIND FRONT CAMERA
-                ------------------------------------------------
+                ==================================================
+                FIND REAR CAMERA
+                ==================================================
                 */
 
-                let selectedCamera =
+                let rearCamera =
 
                     null;
 
@@ -592,20 +601,20 @@ function startPreferredCamera() {
                     if (
 
                         label.indexOf(
-                            "front"
+                            "back"
                         ) !== -1 ||
 
                         label.indexOf(
-                            "user"
+                            "rear"
                         ) !== -1 ||
 
                         label.indexOf(
-                            "facetime"
+                            "environment"
                         ) !== -1
 
                     ) {
 
-                        selectedCamera =
+                        rearCamera =
 
                             cameras[i];
 
@@ -617,36 +626,35 @@ function startPreferredCamera() {
 
 
                 /*
-                ------------------------------------------------
-                IF FRONT CAMERA WAS NOT IDENTIFIED
-                ------------------------------------------------
+                ==================================================
+                FALLBACK IF LABELS DON'T IDENTIFY IT
+                ==================================================
                 */
 
-                if (!selectedCamera) {
+                if (!rearCamera) {
 
                     /*
-                    Try the LAST camera first because
-                    some phones report the rear camera first.
+                    Most phones expose the rear camera
+                    as one of the non-user cameras.
+
+                    Try the first camera as final fallback.
                     */
 
-                    selectedCamera =
-
-                        cameras[
-                            cameras.length - 1
-                        ];
+                    rearCamera =
+                        cameras[0];
 
                 }
 
 
                 /*
-                ------------------------------------------------
-                START SELECTED CAMERA
-                ------------------------------------------------
+                ==================================================
+                START REAR CAMERA
+                ==================================================
                 */
 
                 scanner.start(
 
-                    selectedCamera.id,
+                    rearCamera.id,
 
                     {
 
@@ -680,15 +688,15 @@ function startPreferredCamera() {
 
                     function(error) {
 
-                        document.getElementById(
-                            "message"
-                        ).innerHTML =
+                        showError(
 
                             "❌ Camera error:<br>" +
 
                             escapeHtml(
                                 error
-                            );
+                            )
+
+                        );
 
                     }
 
@@ -702,15 +710,15 @@ function startPreferredCamera() {
 
             function(error) {
 
-                document.getElementById(
-                    "message"
-                ).innerHTML =
+                showError(
 
                     "❌ Unable to access camera:<br>" +
 
                     escapeHtml(
                         error
-                    );
+                    )
+
+                );
 
             }
 
@@ -721,11 +729,13 @@ function startPreferredCamera() {
 
 /*
 ============================================================
-START CAMERA
+INITIALIZE REAR CAMERA
 ============================================================
 */
 
-startFrontCamera();
+showScanMessage();
+
+startRearCamera();
 
 
 /*
@@ -1263,7 +1273,6 @@ STOP SCANNER
 
 function stopScanner() {
 
-
     if (
         scanner
     ) {
@@ -1290,7 +1299,6 @@ SHOW ERROR
 function showError(
     message
 ) {
-
 
     const element =
 
@@ -1319,7 +1327,6 @@ function showSuccess(
     message
 ) {
 
-
     const element =
 
         document.getElementById(
@@ -1346,7 +1353,6 @@ ESCAPE HTML
 function escapeHtml(
     value
 ) {
-
 
     return String(
 
@@ -1386,7 +1392,6 @@ function escapeHtml(
 }
 
 </script>
-
 
 </body>
 
