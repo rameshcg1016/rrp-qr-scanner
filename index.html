@@ -31,7 +31,6 @@ body {
 
 }
 
-
 .container {
 
     max-width: 500px;
@@ -46,7 +45,6 @@ body {
 
 }
 
-
 h2 {
 
     text-align: center;
@@ -55,7 +53,6 @@ h2 {
 
 }
 
-
 #reader {
 
     width: 100%;
@@ -63,7 +60,6 @@ h2 {
     margin-top: 20px;
 
 }
-
 
 #message {
 
@@ -79,20 +75,17 @@ h2 {
 
 }
 
-
 .error {
 
     color: #c62828;
 
 }
 
-
 .success {
 
     color: #2e7d32;
 
 }
-
 
 .info {
 
@@ -112,9 +105,7 @@ h2 {
 
 
     <h2>
-
         RRP QR SCANNER
-
     </h2>
 
 
@@ -241,8 +232,6 @@ SESSION TOKEN
 
 The Apps Script login creates this token.
 
-We keep it while moving through the scanner.
-
 ============================================================
 */
 
@@ -252,38 +241,64 @@ let sessionToken =
 
 
 /*
-------------------------------------------------------------
+============================================================
 IF SESSION NOT IN URL
 TRY LOCAL STORAGE
-------------------------------------------------------------
+============================================================
 */
 
 if (!sessionToken) {
 
-    sessionToken =
+    try {
 
-        localStorage.getItem(
-            "rrpSession"
-        ) || "";
+        sessionToken =
+
+            localStorage.getItem(
+                "rrpSession"
+            ) || "";
+
+    }
+
+    catch(error) {
+
+        console.log(
+            "Unable to read saved session."
+        );
+
+        sessionToken = "";
+
+    }
 
 }
 
 
 /*
-------------------------------------------------------------
+============================================================
 SAVE SESSION
-------------------------------------------------------------
+============================================================
 */
 
 if (sessionToken) {
 
-    localStorage.setItem(
+    try {
 
-        "rrpSession",
+        localStorage.setItem(
 
-        sessionToken
+            "rrpSession",
 
-    );
+            sessionToken
+
+        );
+
+    }
+
+    catch(error) {
+
+        console.log(
+            "Unable to save session."
+        );
+
+    }
 
 }
 
@@ -367,84 +382,317 @@ showScanMessage();
 
 /*
 ============================================================
-START SCANNER
+START FRONT CAMERA
 ============================================================
 */
 
-scanner =
-
-    new Html5Qrcode(
-        "reader"
-    );
+function startFrontCamera() {
 
 
-Html5Qrcode.getCameras()
+    /*
+    --------------------------------------------------------
+    CREATE SCANNER
+    --------------------------------------------------------
+    */
 
-.then(
+    scanner =
 
-    function(cameras) {
+        new Html5Qrcode(
+            "reader"
+        );
 
 
-        if (
-            !cameras ||
-            cameras.length === 0
-        ) {
+    /*
+    ========================================================
+    TRY FRONT CAMERA USING facingMode
+    ========================================================
+    */
 
-            document.getElementById(
-                "message"
-            ).innerHTML =
+    scanner.start(
 
-                "❌ No camera found.";
+        {
+            facingMode: {
+                exact: "user"
+            }
+        },
 
-            return;
+        {
+            fps: 10,
+
+            qrbox: {
+
+                width: 250,
+
+                height: 250
+
+            }
+
+        },
+
+        onScanSuccess
+
+    )
+
+    .then(
+
+        function() {
+
+            showScanMessage();
 
         }
 
+    )
 
-        /*
-        ----------------------------------------------------
-        USE FIRST CAMERA
-        ----------------------------------------------------
-        */
+    .catch(
 
-        const cameraId =
-
-            cameras[0].id;
+        function(error) {
 
 
-        /*
-        ----------------------------------------------------
-        START CAMERA
-        ----------------------------------------------------
-        */
+            console.log(
+                "Exact front camera failed:",
+                error
+            );
 
-        scanner.start(
 
-            cameraId,
+            /*
+            ==================================================
+            TRY USER CAMERA WITHOUT exact
+            ==================================================
+            */
 
-            {
+            scanner.start(
 
-                fps: 10,
+                {
+                    facingMode: "user"
+                },
 
-                qrbox: {
+                {
 
-                    width: 250,
+                    fps: 10,
 
-                    height: 250
+                    qrbox: {
+
+                        width: 250,
+
+                        height: 250
+
+                    }
+
+                },
+
+                onScanSuccess
+
+            )
+
+            .then(
+
+                function() {
+
+                    showScanMessage();
 
                 }
 
-            },
+            )
 
-            onScanSuccess
+            .catch(
 
-        )
+                function(error2) {
+
+
+                    console.log(
+                        "User camera fallback failed:",
+                        error2
+                    );
+
+
+                    /*
+                    ==================================================
+                    FALLBACK TO CAMERA LIST
+                    ==================================================
+                    */
+
+                    startPreferredCamera();
+
+                }
+
+            );
+
+        }
+
+    );
+
+}
+
+
+/*
+============================================================
+PREFERRED CAMERA FROM CAMERA LIST
+============================================================
+*/
+
+function startPreferredCamera() {
+
+
+    Html5Qrcode
+        .getCameras()
 
         .then(
 
-            function() {
+            function(cameras) {
 
-                showScanMessage();
+
+                if (
+
+                    !cameras ||
+
+                    cameras.length === 0
+
+                ) {
+
+                    document.getElementById(
+                        "message"
+                    ).innerHTML =
+
+                        "❌ No camera found.";
+
+                    return;
+
+                }
+
+
+                /*
+                ------------------------------------------------
+                FIND FRONT CAMERA
+                ------------------------------------------------
+                */
+
+                let selectedCamera =
+
+                    null;
+
+
+                for (
+
+                    let i = 0;
+
+                    i < cameras.length;
+
+                    i++
+
+                ) {
+
+                    const label =
+
+                        String(
+                            cameras[i].label || ""
+                        )
+                        .toLowerCase();
+
+
+                    if (
+
+                        label.indexOf(
+                            "front"
+                        ) !== -1 ||
+
+                        label.indexOf(
+                            "user"
+                        ) !== -1 ||
+
+                        label.indexOf(
+                            "facetime"
+                        ) !== -1
+
+                    ) {
+
+                        selectedCamera =
+
+                            cameras[i];
+
+                        break;
+
+                    }
+
+                }
+
+
+                /*
+                ------------------------------------------------
+                IF FRONT CAMERA WAS NOT IDENTIFIED
+                ------------------------------------------------
+                */
+
+                if (!selectedCamera) {
+
+                    /*
+                    Try the LAST camera first because
+                    some phones report the rear camera first.
+                    */
+
+                    selectedCamera =
+
+                        cameras[
+                            cameras.length - 1
+                        ];
+
+                }
+
+
+                /*
+                ------------------------------------------------
+                START SELECTED CAMERA
+                ------------------------------------------------
+                */
+
+                scanner.start(
+
+                    selectedCamera.id,
+
+                    {
+
+                        fps: 10,
+
+                        qrbox: {
+
+                            width: 250,
+
+                            height: 250
+
+                        }
+
+                    },
+
+                    onScanSuccess
+
+                )
+
+                .then(
+
+                    function() {
+
+                        showScanMessage();
+
+                    }
+
+                )
+
+                .catch(
+
+                    function(error) {
+
+                        document.getElementById(
+                            "message"
+                        ).innerHTML =
+
+                            "❌ Camera error:<br>" +
+
+                            escapeHtml(
+                                error
+                            );
+
+                    }
+
+                );
 
             }
 
@@ -458,7 +706,7 @@ Html5Qrcode.getCameras()
                     "message"
                 ).innerHTML =
 
-                    "❌ Camera error:<br>" +
+                    "❌ Unable to access camera:<br>" +
 
                     escapeHtml(
                         error
@@ -468,27 +716,16 @@ Html5Qrcode.getCameras()
 
         );
 
-    }
+}
 
-)
 
-.catch(
+/*
+============================================================
+START CAMERA
+============================================================
+*/
 
-    function(error) {
-
-        document.getElementById(
-            "message"
-        ).innerHTML =
-
-            "❌ Unable to access camera:<br>" +
-
-            escapeHtml(
-                error
-            );
-
-    }
-
-);
+startFrontCamera();
 
 
 /*
@@ -531,7 +768,9 @@ function onScanSuccess(
     ========================================================
     */
 
-    let scannedURL = null;
+    let scannedURL =
+
+        null;
 
 
     try {
@@ -546,7 +785,9 @@ function onScanSuccess(
 
     catch(error) {
 
-        scannedURL = null;
+        scannedURL =
+
+            null;
 
     }
 
@@ -574,7 +815,9 @@ function onScanSuccess(
 
             );
 
+
             scanLocked = false;
+
 
             return;
 
@@ -596,8 +839,11 @@ function onScanSuccess(
 
 
         if (
+
             qrPage !== "production" ||
+
             !supplyID
+
         ) {
 
             showError(
@@ -608,7 +854,9 @@ function onScanSuccess(
 
             );
 
+
             scanLocked = false;
+
 
             return;
 
@@ -763,7 +1011,9 @@ function onScanSuccess(
                 "❌ Part number is missing."
             );
 
+
             scanLocked = false;
+
 
             return;
 
@@ -882,7 +1132,9 @@ function onScanSuccess(
 
             );
 
+
             scanLocked = false;
+
 
             return;
 
@@ -904,8 +1156,11 @@ function onScanSuccess(
 
 
         if (
+
             batchQRPage !== "production" ||
+
             !batchSupplyID
+
         ) {
 
             showError(
@@ -916,7 +1171,9 @@ function onScanSuccess(
 
             );
 
+
             scanLocked = false;
+
 
             return;
 
@@ -1013,9 +1270,11 @@ function stopScanner() {
 
         scanner.stop()
 
-        .catch(
-            function() {}
-        );
+            .catch(
+
+                function() {}
+
+            );
 
     }
 
@@ -1031,6 +1290,7 @@ SHOW ERROR
 function showError(
     message
 ) {
+
 
     const element =
 
@@ -1059,6 +1319,7 @@ function showSuccess(
     message
 ) {
 
+
     const element =
 
         document.getElementById(
@@ -1086,10 +1347,13 @@ function escapeHtml(
     value
 ) {
 
+
     return String(
 
         value == null
+
             ? ""
+
             : value
 
     )
@@ -1122,6 +1386,7 @@ function escapeHtml(
 }
 
 </script>
+
 
 </body>
 
