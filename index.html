@@ -31,7 +31,6 @@ body {
 
 }
 
-
 .container {
 
     max-width: 500px;
@@ -46,7 +45,6 @@ body {
 
 }
 
-
 h2 {
 
     text-align: center;
@@ -55,7 +53,6 @@ h2 {
 
 }
 
-
 #reader {
 
     width: 100%;
@@ -63,7 +60,6 @@ h2 {
     margin-top: 20px;
 
 }
-
 
 #message {
 
@@ -79,13 +75,11 @@ h2 {
 
 }
 
-
 .error {
 
     color: #c62828;
 
 }
-
 
 .success {
 
@@ -93,10 +87,47 @@ h2 {
 
 }
 
-
 .info {
 
     color: #555;
+
+}
+
+.gateway-button {
+
+    display: inline-block;
+
+    margin-top: 15px;
+
+    padding: 13px 22px;
+
+    background: #1976d2;
+
+    color: white;
+
+    text-decoration: none;
+
+    border-radius: 8px;
+
+    font-weight: bold;
+
+}
+
+.debug-box {
+
+    margin-top: 15px;
+
+    padding: 10px;
+
+    background: #f5f5f5;
+
+    border-radius: 6px;
+
+    font-size: 11px;
+
+    text-align: left;
+
+    word-break: break-all;
 
 }
 
@@ -135,7 +166,7 @@ RRP APPS SCRIPT URL
 ============================================================
 */
 
-const appURL =
+const APP_URL =
 
     "https://script.google.com/macros/s/" +
 
@@ -146,11 +177,11 @@ const appURL =
 
 /*
 ============================================================
-GITHUB SCANNER URL
+GITHUB GATEWAY URL
 ============================================================
 */
 
-const scannerURL =
+const GATEWAY_URL =
 
     "https://rameshcg1016.github.io/rrp-qr-scanner/";
 
@@ -175,10 +206,8 @@ const params =
 
 /*
 ============================================================
-GATEWAY MODE
+MODE
 ============================================================
-
-Possible values:
 
 gateway
 gateway-login
@@ -193,13 +222,7 @@ const gatewayMode =
 
 /*
 ============================================================
-GATEWAY TARGET
-============================================================
-
-The QR contains:
-
-?mode=gateway&target=BASE64
-
+TARGET
 ============================================================
 */
 
@@ -211,10 +234,6 @@ const encodedTarget =
 /*
 ============================================================
 GATEWAY SESSION
-============================================================
-
-Returned from LoginPage after successful login.
-
 ============================================================
 */
 
@@ -261,7 +280,7 @@ const remarks =
 
 /*
 ============================================================
-SESSION
+SESSION TOKEN
 ============================================================
 */
 
@@ -272,7 +291,7 @@ let sessionToken =
 
 /*
 ============================================================
-READ SAVED GITHUB SESSION
+READ SAVED SESSION
 ============================================================
 */
 
@@ -291,7 +310,7 @@ if (!sessionToken) {
     catch(error) {
 
         console.log(
-            "Unable to read local session:",
+            "Unable to read saved session:",
             error
         );
 
@@ -318,7 +337,6 @@ function saveSession(
 
     }
 
-
     try {
 
         localStorage.setItem(
@@ -342,7 +360,7 @@ function saveSession(
 
 /*
 ============================================================
-GET TARGET URL FROM BASE64
+GET TARGET FROM BASE64
 ============================================================
 */
 
@@ -364,12 +382,6 @@ function getTargetURL() {
     }
 
     catch(error) {
-
-        /*
-        ----------------------------------------------------
-        Try URI decoded value if necessary
-        ----------------------------------------------------
-        */
 
         try {
 
@@ -399,11 +411,25 @@ function getTargetURL() {
 
 /*
 ============================================================
-ADD / REPLACE SESSION
+CREATE FINAL APPS SCRIPT URL
+============================================================
+
+Important:
+
+We always use APP_URL as the final destination.
+
+This avoids switching between:
+
+/macros/s/...
+
+and
+
+/a/rekharubber.com/macros/s/...
+
 ============================================================
 */
 
-function addSessionToURL(
+function createFinalAppURL(
     targetURL,
     token
 ) {
@@ -417,6 +443,101 @@ function addSessionToURL(
 
     try {
 
+        const sourceURL =
+
+            new URL(
+                targetURL
+            );
+
+
+        const finalURL =
+
+            new URL(
+                APP_URL
+            );
+
+
+        /*
+        ----------------------------------------------------
+        COPY ALL TARGET PARAMETERS
+        ----------------------------------------------------
+        */
+
+        sourceURL.searchParams.forEach(
+
+            function(value, key) {
+
+                /*
+                Do not copy these.
+                */
+
+                if (
+                    key === "session" ||
+                    key === "rrpGateway" ||
+                    key === "gatewayReturn"
+                ) {
+
+                    return;
+
+                }
+
+
+                finalURL.searchParams.set(
+                    key,
+                    value
+                );
+
+            }
+
+        );
+
+
+        /*
+        ----------------------------------------------------
+        ADD SESSION
+        ----------------------------------------------------
+        */
+
+        if (token) {
+
+            finalURL.searchParams.set(
+                "session",
+                token
+            );
+
+        }
+
+
+        return finalURL.toString();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Unable to create final URL:",
+            error
+        );
+
+        return "";
+
+    }
+
+}
+
+
+/*
+============================================================
+CREATE LOGIN URL
+============================================================
+*/
+
+function createLoginURL(
+    targetURL
+) {
+
+    try {
+
         const url =
 
             new URL(
@@ -426,29 +547,26 @@ function addSessionToURL(
 
         /*
         ----------------------------------------------------
-        REMOVE ANY OLD SESSION
+        Gateway flag
         ----------------------------------------------------
         */
 
-        url.searchParams.delete(
-            "session"
+        url.searchParams.set(
+            "rrpGateway",
+            "1"
         );
 
 
         /*
         ----------------------------------------------------
-        ADD NEW SESSION
+        Return to GitHub
         ----------------------------------------------------
         */
 
-        if (token) {
-
-            url.searchParams.set(
-                "session",
-                token
-            );
-
-        }
+        url.searchParams.set(
+            "gatewayReturn",
+            GATEWAY_URL
+        );
 
 
         return url.toString();
@@ -458,11 +576,11 @@ function addSessionToURL(
     catch(error) {
 
         console.error(
-            "Unable to add session:",
+            "Unable to create login URL:",
             error
         );
 
-        return targetURL;
+        return "";
 
     }
 
@@ -471,7 +589,7 @@ function addSessionToURL(
 
 /*
 ============================================================
-OPEN TARGET AFTER GATEWAY LOGIN
+GATEWAY MODE
 ============================================================
 */
 
@@ -502,11 +620,38 @@ function openGatewayTarget() {
 
     /*
     ========================================================
-    SESSION EXISTS
+    SAVED SESSION EXISTS
     ========================================================
     */
 
     if (sessionToken) {
+
+        /*
+        IMPORTANT:
+
+        Keep the Gateway parameters when opening Apps Script.
+
+        If the saved session is expired, Apps Script will
+        show LoginPage, and LoginPage can return to GitHub
+        again.
+        */
+
+        const finalURL =
+            createFinalAppURL(
+                targetURL,
+                sessionToken
+            );
+
+
+        if (!finalURL) {
+
+            showError(
+                "❌ Unable to create ERP URL."
+            );
+
+            return;
+
+        }
 
 
         showSuccess(
@@ -516,14 +661,6 @@ function openGatewayTarget() {
             "Opening RRP ERP..."
 
         );
-
-
-        const finalURL =
-
-            addSessionToURL(
-                targetURL,
-                sessionToken
-            );
 
 
         setTimeout(
@@ -551,6 +688,24 @@ function openGatewayTarget() {
     ========================================================
     */
 
+    const loginURL =
+
+        createLoginURL(
+            targetURL
+        );
+
+
+    if (!loginURL) {
+
+        showError(
+            "❌ Unable to create Login URL."
+        );
+
+        return;
+
+    }
+
+
     showInfo(
 
         "No active RRP session found.<br><br>" +
@@ -559,81 +714,6 @@ function openGatewayTarget() {
 
     );
 
-
-    /*
-    --------------------------------------------------------
-    BUILD LOGIN URL
-    --------------------------------------------------------
-    */
-
-    let loginURL =
-
-        targetURL;
-
-
-    try {
-
-        const url =
-
-            new URL(
-                targetURL
-            );
-
-
-        /*
-        The Apps Script login page will send the
-        session back to this GitHub Gateway.
-        */
-
-        url.searchParams.set(
-            "rrpGateway",
-            "1"
-        );
-
-
-        url.searchParams.set(
-            "gatewayReturn",
-            scannerURL
-        );
-
-
-        loginURL =
-            url.toString();
-
-    }
-
-    catch(error) {
-
-        /*
-        Fallback if target is not a valid URL.
-        */
-
-        loginURL =
-
-            targetURL +
-
-            (
-                targetURL.indexOf("?") >= 0
-                    ? "&"
-                    : "?"
-            ) +
-
-            "rrpGateway=1" +
-
-            "&gatewayReturn=" +
-
-            encodeURIComponent(
-                scannerURL
-            );
-
-    }
-
-
-    /*
-    --------------------------------------------------------
-    OPEN LOGIN / TARGET
-    --------------------------------------------------------
-    */
 
     setTimeout(
 
@@ -656,10 +736,10 @@ function openGatewayTarget() {
 GATEWAY LOGIN CALLBACK
 ============================================================
 
-LoginPage redirects here:
+Expected:
 
 ?mode=gateway-login
-&session=XXXXXXXX
+&session=XXXXX
 &target=BASE64
 
 ============================================================
@@ -670,30 +750,43 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    CHECK SESSION
+    SESSION CHECK
     --------------------------------------------------------
     */
 
-    if (gatewaySession) {
+    if (!gatewaySession) {
 
-        sessionToken =
-            gatewaySession;
-
-
-        saveSession(
-            gatewaySession
+        showError(
+            "❌ Login session was not received."
         );
+
+        return;
 
     }
 
 
     /*
     --------------------------------------------------------
-    DECODE TARGET
+    SAVE SESSION
     --------------------------------------------------------
     */
 
-    let targetURL =
+    saveSession(
+        gatewaySession
+    );
+
+
+    sessionToken =
+        gatewaySession;
+
+
+    /*
+    --------------------------------------------------------
+    GET TARGET
+    --------------------------------------------------------
+    */
+
+    const targetURL =
 
         getTargetURL();
 
@@ -711,16 +804,22 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    SESSION MUST EXIST
+    CREATE FINAL URL
     --------------------------------------------------------
     */
 
-    if (!sessionToken) {
+    const finalURL =
+
+        createFinalAppURL(
+            targetURL,
+            gatewaySession
+        );
+
+
+    if (!finalURL) {
 
         showError(
-
-            "❌ Login session was not received."
-
+            "❌ Unable to create final ERP URL."
         );
 
         return;
@@ -730,21 +829,7 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    ADD SESSION
-    --------------------------------------------------------
-    */
-
-    targetURL =
-
-        addSessionToURL(
-            targetURL,
-            sessionToken
-        );
-
-
-    /*
-    --------------------------------------------------------
-    SHOW SUCCESS
+    SUCCESS
     --------------------------------------------------------
     */
 
@@ -752,7 +837,7 @@ function handleGatewayLogin() {
 
         "✅ Login successful.<br><br>" +
 
-        "Session saved.<br><br>" +
+        "Session saved in this browser.<br><br>" +
 
         "Opening RRP ERP..."
 
@@ -761,7 +846,80 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    OPEN TARGET
+    DEBUG LINK
+    --------------------------------------------------------
+    */
+
+    const message =
+
+        document.getElementById(
+            "message"
+        );
+
+
+    const link =
+
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        finalURL;
+
+    link.target =
+        "_top";
+
+    link.className =
+        "gateway-button";
+
+    link.textContent =
+        "OPEN RRP ERP";
+
+
+    message.appendChild(
+        document.createElement("br")
+    );
+
+    message.appendChild(
+        link
+    );
+
+
+    /*
+    --------------------------------------------------------
+    DEBUG URL
+    --------------------------------------------------------
+    */
+
+    const debug =
+
+        document.createElement(
+            "div"
+        );
+
+
+    debug.className =
+        "debug-box";
+
+
+    debug.innerHTML =
+
+        "<b>Final ERP URL:</b><br>" +
+
+        escapeHtml(
+            finalURL
+        );
+
+
+    message.appendChild(
+        debug
+    );
+
+
+    /*
+    --------------------------------------------------------
+    AUTOMATIC REDIRECT
     --------------------------------------------------------
     */
 
@@ -770,7 +928,7 @@ function handleGatewayLogin() {
         function() {
 
             window.location.href =
-                targetURL;
+                finalURL;
 
         },
 
@@ -783,7 +941,9 @@ function handleGatewayLogin() {
 
 /*
 ============================================================
-RUN GATEWAY BEFORE CAMERA
+IMPORTANT:
+
+GATEWAY MUST BE CHECKED BEFORE CAMERA
 ============================================================
 */
 
@@ -791,40 +951,19 @@ if (
     gatewayMode === "gateway"
 ) {
 
-
-    /*
-    IMPORTANT:
-    Do NOT create or start camera.
-    */
-
     openGatewayTarget();
 
 }
-
 
 else if (
     gatewayMode === "gateway-login"
 ) {
 
-
-    /*
-    IMPORTANT:
-    Do NOT create or start camera.
-    */
-
     handleGatewayLogin();
 
 }
 
-
 else {
-
-
-    /*
-    ========================================================
-    NORMAL QR SCANNER
-    ========================================================
-    */
 
     startNormalScanner();
 
@@ -840,22 +979,10 @@ NORMAL SCANNER
 function startNormalScanner() {
 
 
-    /*
-    --------------------------------------------------------
-    INITIAL MESSAGE
-    --------------------------------------------------------
-    */
-
     showScanMessage();
 
 
-    /*
-    --------------------------------------------------------
-    CREATE SCANNER
-    --------------------------------------------------------
-    */
-
-    let scanner =
+    const scanner =
 
         new Html5Qrcode(
             "reader"
@@ -864,12 +991,6 @@ function startNormalScanner() {
 
     let scanLocked = false;
 
-
-    /*
-    --------------------------------------------------------
-    START CAMERA
-    --------------------------------------------------------
-    */
 
     Html5Qrcode.getCameras()
 
@@ -892,22 +1013,10 @@ function startNormalScanner() {
                 }
 
 
-                /*
-                ------------------------------------------------
-                USE FIRST CAMERA
-                ------------------------------------------------
-                */
-
                 const cameraId =
 
                     cameras[0].id;
 
-
-                /*
-                ------------------------------------------------
-                START
-                ------------------------------------------------
-                */
 
                 scanner.start(
 
@@ -929,12 +1038,6 @@ function startNormalScanner() {
 
                     function(decodedText) {
 
-
-                        /*
-                        ========================================
-                        PREVENT MULTIPLE SCANS
-                        ========================================
-                        */
 
                         if (
                             scanLocked
@@ -960,7 +1063,6 @@ function startNormalScanner() {
 
                 )
 
-
                 .then(
 
                     function() {
@@ -970,7 +1072,6 @@ function startNormalScanner() {
                     }
 
                 )
-
 
                 .catch(
 
@@ -1036,7 +1137,6 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
-
             "📦 Point the camera at the TRAY QR";
 
     }
@@ -1046,7 +1146,6 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
-
             "🏭 Point the camera at the SUPPLY QR";
 
     }
@@ -1056,7 +1155,6 @@ function showScanMessage() {
     ) {
 
         message.innerHTML =
-
             "🏷️ Point the camera at the SUPPLY QR";
 
     }
@@ -1064,7 +1162,6 @@ function showScanMessage() {
     else {
 
         message.innerHTML =
-
             "📷 Point the camera at the PART QR";
 
     }
@@ -1131,11 +1228,7 @@ function onScanSuccess(
         if (!scannedURL) {
 
             showError(
-
-                "❌ Invalid Supply QR.<br><br>" +
-
-                "Please scan the Supply QR generated by RRP."
-
+                "❌ Invalid Supply QR."
             );
 
             return;
@@ -1163,11 +1256,7 @@ function onScanSuccess(
         ) {
 
             showError(
-
-                "❌ Invalid Supply QR.<br><br>" +
-
-                "Please scan the correct Supply QR."
-
+                "❌ Invalid Supply QR."
             );
 
             return;
@@ -1199,7 +1288,7 @@ function onScanSuccess(
 
         let productionURL =
 
-            appURL +
+            APP_URL +
 
             "?page=production" +
 
@@ -1223,7 +1312,6 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
-
                     productionURL;
 
             },
@@ -1273,7 +1361,7 @@ function onScanSuccess(
 
         let partURL =
 
-            appURL +
+            APP_URL +
 
             "?page=supply" +
 
@@ -1357,7 +1445,7 @@ function onScanSuccess(
 
         let trayURL =
 
-            appURL +
+            APP_URL +
 
             "?page=supply" +
 
@@ -1439,11 +1527,7 @@ function onScanSuccess(
         if (!scannedURL) {
 
             showError(
-
-                "❌ Invalid Supply QR.<br><br>" +
-
-                "Please scan the Supply QR."
-
+                "❌ Invalid Supply QR."
             );
 
             return;
@@ -1471,11 +1555,7 @@ function onScanSuccess(
         ) {
 
             showError(
-
-                "❌ Invalid Supply QR.<br><br>" +
-
-                "The QR must contain a valid Supply ID."
-
+                "❌ Invalid Supply QR."
             );
 
             return;
@@ -1507,7 +1587,7 @@ function onScanSuccess(
 
         let batchURL =
 
-            appURL +
+            APP_URL +
 
             "?page=batchcreate" +
 
@@ -1545,15 +1625,68 @@ function onScanSuccess(
     }
 
 
-    /*
-    ========================================================
-    UNKNOWN
-    ========================================================
-    */
-
     showError(
         "❌ Unknown scan mode."
     );
+
+}
+
+
+/*
+============================================================
+ADD SESSION TO NORMAL SCANNER URL
+============================================================
+*/
+
+function addSessionToURL(
+    targetURL,
+    token
+) {
+
+    if (!targetURL) {
+
+        return "";
+
+    }
+
+
+    try {
+
+        const url =
+
+            new URL(
+                targetURL
+            );
+
+
+        url.searchParams.delete(
+            "session"
+        );
+
+
+        if (token) {
+
+            url.searchParams.set(
+                "session",
+                token
+            );
+
+        }
+
+
+        return url.toString();
+
+    }
+
+    catch(error) {
+
+        console.error(
+            error
+        );
+
+        return targetURL;
+
+    }
 
 }
 
@@ -1578,9 +1711,7 @@ function stopScanner(
     scanner.stop()
 
         .catch(
-
             function() {}
-
         );
 
 }
