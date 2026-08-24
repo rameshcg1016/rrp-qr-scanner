@@ -31,6 +31,7 @@ body {
 
 }
 
+
 .container {
 
     max-width: 500px;
@@ -45,6 +46,7 @@ body {
 
 }
 
+
 h2 {
 
     text-align: center;
@@ -53,6 +55,7 @@ h2 {
 
 }
 
+
 #reader {
 
     width: 100%;
@@ -60,6 +63,7 @@ h2 {
     margin-top: 20px;
 
 }
+
 
 #message {
 
@@ -75,11 +79,13 @@ h2 {
 
 }
 
+
 .error {
 
     color: #c62828;
 
 }
+
 
 .success {
 
@@ -87,11 +93,13 @@ h2 {
 
 }
 
+
 .info {
 
     color: #555;
 
 }
+
 
 .gateway-button {
 
@@ -113,24 +121,6 @@ h2 {
 
 }
 
-.debug-box {
-
-    margin-top: 15px;
-
-    padding: 10px;
-
-    background: #f5f5f5;
-
-    border-radius: 6px;
-
-    font-size: 11px;
-
-    text-align: left;
-
-    word-break: break-all;
-
-}
-
 </style>
 
 </head>
@@ -145,7 +135,9 @@ h2 {
         RRP QR SCANNER
     </h2>
 
+
     <div id="reader"></div>
+
 
     <div id="message"
          class="info">
@@ -206,12 +198,7 @@ const params =
 
 /*
 ============================================================
-MODE
-============================================================
-
-gateway
-gateway-login
-
+GATEWAY MODE
 ============================================================
 */
 
@@ -291,32 +278,110 @@ let sessionToken =
 
 /*
 ============================================================
-READ SAVED SESSION
+READ SESSION FROM LOCAL STORAGE
 ============================================================
 */
 
-if (!sessionToken) {
+function readLocalSession() {
 
     try {
 
-        sessionToken =
+        return (
 
             localStorage.getItem(
                 "rrpSession"
-            ) || "";
+            ) || ""
+
+        );
 
     }
 
     catch(error) {
 
-        console.log(
-            "Unable to read saved session:",
-            error
-        );
-
-        sessionToken = "";
+        return "";
 
     }
+
+}
+
+
+/*
+============================================================
+READ SESSION FROM COOKIE
+============================================================
+*/
+
+function readCookieSession() {
+
+    try {
+
+        const cookies =
+
+            document.cookie
+                .split(";");
+
+
+        for (
+            let i = 0;
+            i < cookies.length;
+            i++
+        ) {
+
+            const cookie =
+
+                cookies[i].trim();
+
+
+            if (
+                cookie.indexOf(
+                    "rrpSession="
+                ) === 0
+            ) {
+
+                return decodeURIComponent(
+
+                    cookie.substring(
+                        "rrpSession=".length
+                    )
+
+                );
+
+            }
+
+        }
+
+    }
+
+    catch(error) {
+
+        return "";
+
+    }
+
+
+    return "";
+
+}
+
+
+/*
+============================================================
+GET SAVED SESSION
+============================================================
+*/
+
+if (!sessionToken) {
+
+    sessionToken =
+        readLocalSession();
+
+}
+
+
+if (!sessionToken) {
+
+    sessionToken =
+        readCookieSession();
 
 }
 
@@ -337,6 +402,13 @@ function saveSession(
 
     }
 
+
+    /*
+    --------------------------------------------------------
+    LOCAL STORAGE
+    --------------------------------------------------------
+    */
+
     try {
 
         localStorage.setItem(
@@ -349,8 +421,40 @@ function saveSession(
     catch(error) {
 
         console.log(
-            "Unable to save session:",
-            error
+            "Local storage unavailable."
+        );
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    COOKIE
+    --------------------------------------------------------
+    */
+
+    try {
+
+        document.cookie =
+
+            "rrpSession=" +
+
+            encodeURIComponent(
+                token
+            ) +
+
+            "; path=/" +
+
+            "; max-age=21600" +
+
+            "; SameSite=Lax";
+
+    }
+
+    catch(error) {
+
+        console.log(
+            "Cookie storage unavailable."
         );
 
     }
@@ -395,11 +499,6 @@ function getTargetURL() {
 
         catch(error2) {
 
-            console.error(
-                "Target decode failed:",
-                error2
-            );
-
             return "";
 
         }
@@ -412,20 +511,6 @@ function getTargetURL() {
 /*
 ============================================================
 CREATE FINAL APPS SCRIPT URL
-============================================================
-
-Important:
-
-We always use APP_URL as the final destination.
-
-This avoids switching between:
-
-/macros/s/...
-
-and
-
-/a/rekharubber.com/macros/s/...
-
 ============================================================
 */
 
@@ -459,22 +544,25 @@ function createFinalAppURL(
 
         /*
         ----------------------------------------------------
-        COPY ALL TARGET PARAMETERS
+        COPY ORIGINAL PARAMETERS
         ----------------------------------------------------
         */
 
         sourceURL.searchParams.forEach(
 
-            function(value, key) {
-
-                /*
-                Do not copy these.
-                */
+            function(
+                value,
+                key
+            ) {
 
                 if (
+
                     key === "session" ||
+
                     key === "rrpGateway" ||
+
                     key === "gatewayReturn"
+
                 ) {
 
                     return;
@@ -514,11 +602,6 @@ function createFinalAppURL(
 
     catch(error) {
 
-        console.error(
-            "Unable to create final URL:",
-            error
-        );
-
         return "";
 
     }
@@ -547,7 +630,7 @@ function createLoginURL(
 
         /*
         ----------------------------------------------------
-        Gateway flag
+        GATEWAY FLAG
         ----------------------------------------------------
         */
 
@@ -559,7 +642,7 @@ function createLoginURL(
 
         /*
         ----------------------------------------------------
-        Return to GitHub
+        RETURN TO GITHUB
         ----------------------------------------------------
         */
 
@@ -575,11 +658,6 @@ function createLoginURL(
 
     catch(error) {
 
-        console.error(
-            "Unable to create login URL:",
-            error
-        );
-
         return "";
 
     }
@@ -589,7 +667,7 @@ function createLoginURL(
 
 /*
 ============================================================
-GATEWAY MODE
+GATEWAY ENTRY
 ============================================================
 */
 
@@ -603,7 +681,7 @@ function openGatewayTarget() {
 
     /*
     --------------------------------------------------------
-    TARGET MISSING
+    TARGET REQUIRED
     --------------------------------------------------------
     */
 
@@ -620,23 +698,15 @@ function openGatewayTarget() {
 
     /*
     ========================================================
-    SAVED SESSION EXISTS
+    SAVED SESSION
     ========================================================
     */
 
     if (sessionToken) {
 
-        /*
-        IMPORTANT:
-
-        Keep the Gateway parameters when opening Apps Script.
-
-        If the saved session is expired, Apps Script will
-        show LoginPage, and LoginPage can return to GitHub
-        again.
-        */
 
         const finalURL =
+
             createFinalAppURL(
                 targetURL,
                 sessionToken
@@ -656,8 +726,6 @@ function openGatewayTarget() {
 
         showSuccess(
 
-            "✅ Existing RRP session found.<br><br>" +
-
             "Opening RRP ERP..."
 
         );
@@ -672,7 +740,7 @@ function openGatewayTarget() {
 
             },
 
-            500
+            300
 
         );
 
@@ -707,11 +775,7 @@ function openGatewayTarget() {
 
 
     showInfo(
-
-        "No active RRP session found.<br><br>" +
-
         "Opening RRP Login..."
-
     );
 
 
@@ -724,7 +788,7 @@ function openGatewayTarget() {
 
         },
 
-        500
+        300
 
     );
 
@@ -750,7 +814,7 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    SESSION CHECK
+    SESSION REQUIRED
     --------------------------------------------------------
     */
 
@@ -782,7 +846,7 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    GET TARGET
+    TARGET
     --------------------------------------------------------
     */
 
@@ -804,7 +868,7 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    CREATE FINAL URL
+    FINAL ERP URL
     --------------------------------------------------------
     */
 
@@ -837,8 +901,6 @@ function handleGatewayLogin() {
 
         "✅ Login successful.<br><br>" +
 
-        "Session saved in this browser.<br><br>" +
-
         "Opening RRP ERP..."
 
     );
@@ -846,7 +908,7 @@ function handleGatewayLogin() {
 
     /*
     --------------------------------------------------------
-    DEBUG LINK
+    FALLBACK BUTTON
     --------------------------------------------------------
     */
 
@@ -867,11 +929,14 @@ function handleGatewayLogin() {
     link.href =
         finalURL;
 
+
     link.target =
         "_top";
 
+
     link.className =
         "gateway-button";
+
 
     link.textContent =
         "OPEN RRP ERP";
@@ -881,39 +946,9 @@ function handleGatewayLogin() {
         document.createElement("br")
     );
 
+
     message.appendChild(
         link
-    );
-
-
-    /*
-    --------------------------------------------------------
-    DEBUG URL
-    --------------------------------------------------------
-    */
-
-    const debug =
-
-        document.createElement(
-            "div"
-        );
-
-
-    debug.className =
-        "debug-box";
-
-
-    debug.innerHTML =
-
-        "<b>Final ERP URL:</b><br>" +
-
-        escapeHtml(
-            finalURL
-        );
-
-
-    message.appendChild(
-        debug
     );
 
 
@@ -932,7 +967,7 @@ function handleGatewayLogin() {
 
         },
 
-        700
+        500
 
     );
 
@@ -941,9 +976,7 @@ function handleGatewayLogin() {
 
 /*
 ============================================================
-IMPORTANT:
-
-GATEWAY MUST BE CHECKED BEFORE CAMERA
+GATEWAY MUST RUN BEFORE CAMERA
 ============================================================
 */
 
@@ -955,6 +988,7 @@ if (
 
 }
 
+
 else if (
     gatewayMode === "gateway-login"
 ) {
@@ -962,6 +996,7 @@ else if (
     handleGatewayLogin();
 
 }
+
 
 else {
 
@@ -1679,10 +1714,6 @@ function addSessionToURL(
     }
 
     catch(error) {
-
-        console.error(
-            error
-        );
 
         return targetURL;
 
