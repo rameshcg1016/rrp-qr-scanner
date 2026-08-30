@@ -191,6 +191,7 @@ SUPPORTED MODES:
 part
 partbasic
 blankcutting
+toolinfo
 tray
 production
 batch
@@ -418,6 +419,23 @@ function showScanMessage() {
         message.innerHTML =
 
             "✂️ Point the camera at the INTERNAL PART QR";
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    TOOL INFO
+    --------------------------------------------------------
+    */
+
+    else if (
+        scanType === "toolinfo"
+    ) {
+
+        message.innerHTML =
+
+            "🔧 Point the camera at the INTERNAL PART QR";
 
     }
 
@@ -1198,6 +1216,105 @@ function onScanSuccess(
                 window.location.href =
 
                     blankCuttingURL;
+
+            },
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    TOOL INFO QR
+    ========================================================
+
+    QR VALUE IS DIRECTLY THE
+    INTERNAL PART NUMBER.
+
+    Opens:
+
+    ?page=toolinfo
+    &internalPart=RRP-PART-001
+
+    ========================================================
+    */
+
+    if (
+        scanType === "toolinfo"
+    ) {
+
+        if (
+            !scannedValue
+        ) {
+
+            showError(
+
+                "❌ Empty Part QR.<br><br>" +
+
+                "Please scan a valid Internal Part QR."
+
+            );
+
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        showSuccess(
+
+            "✅ PART QR SCANNED<br><br>" +
+
+            "Internal Part Number: <b>" +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
+            "</b><br><br>" +
+
+            "Opening Tool Info..."
+
+        );
+
+
+        stopScanner();
+
+
+        const toolInfoURL =
+
+            appURL +
+
+            "?page=toolinfo" +
+
+            "&internalPart=" +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+
+                    toolInfoURL;
 
             },
 
