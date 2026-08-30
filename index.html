@@ -10,13 +10,16 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
+
 <style>
 
 * {
     box-sizing: border-box;
 }
 
+
 body {
+
     font-family:
         Arial,
         Helvetica,
@@ -27,9 +30,12 @@ body {
     padding: 20px;
 
     background: #f2f2f2;
+
 }
 
+
 .container {
+
     max-width: 500px;
 
     margin: auto;
@@ -39,21 +45,30 @@ body {
     padding: 20px;
 
     border-radius: 12px;
+
 }
 
+
 h2 {
+
     text-align: center;
 
     margin-top: 5px;
+
 }
 
+
 #reader {
+
     width: 100%;
 
     margin-top: 20px;
+
 }
 
+
 #message {
+
     text-align: center;
 
     margin-top: 15px;
@@ -63,18 +78,28 @@ h2 {
     word-break: break-word;
 
     line-height: 1.5;
+
 }
+
 
 .error {
+
     color: #c62828;
+
 }
+
 
 .success {
+
     color: #2e7d32;
+
 }
 
+
 .info {
+
     color: #555;
+
 }
 
 </style>
@@ -87,18 +112,24 @@ h2 {
 
 <div class="container">
 
-    <h2>
-        RRP QR SCANNER
-    </h2>
 
-    <div id="reader"></div>
+<h2>
+    RRP QR SCANNER
+</h2>
 
-    <div id="message"
-         class="info">
 
-        Starting camera...
+<div id="reader"></div>
 
-    </div>
+
+<div
+    id="message"
+    class="info"
+>
+
+    Starting camera...
+
+</div>
+
 
 </div>
 
@@ -155,10 +186,11 @@ const params =
 SCAN TYPE
 ============================================================
 
-Supported:
+SUPPORTED MODES:
 
 part
 partbasic
+blankcutting
 tray
 production
 batch
@@ -281,7 +313,7 @@ if (sessionToken) {
 
 /*
 ============================================================
-SCANNER
+SCANNER VARIABLES
 ============================================================
 */
 
@@ -305,6 +337,12 @@ function showScanMessage() {
         );
 
 
+    /*
+    --------------------------------------------------------
+    TRAY
+    --------------------------------------------------------
+    */
+
     if (
         scanType === "tray"
     ) {
@@ -314,6 +352,13 @@ function showScanMessage() {
             "📦 Point the camera at the TRAY QR";
 
     }
+
+
+    /*
+    --------------------------------------------------------
+    PRODUCTION
+    --------------------------------------------------------
+    */
 
     else if (
         scanType === "production"
@@ -325,6 +370,13 @@ function showScanMessage() {
 
     }
 
+
+    /*
+    --------------------------------------------------------
+    BATCH
+    --------------------------------------------------------
+    */
+
     else if (
         scanType === "batch"
     ) {
@@ -335,10 +387,11 @@ function showScanMessage() {
 
     }
 
+
     /*
-    ========================================================
-    NEW PART BASIC INFO MODE
-    ========================================================
+    --------------------------------------------------------
+    PART BASIC INFO
+    --------------------------------------------------------
     */
 
     else if (
@@ -350,6 +403,30 @@ function showScanMessage() {
             "📋 Point the camera at the INTERNAL PART QR";
 
     }
+
+
+    /*
+    --------------------------------------------------------
+    BLANK CUTTING INFO
+    --------------------------------------------------------
+    */
+
+    else if (
+        scanType === "blankcutting"
+    ) {
+
+        message.innerHTML =
+
+            "✂️ Point the camera at the INTERNAL PART QR";
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    NORMAL PART
+    --------------------------------------------------------
+    */
 
     else {
 
@@ -380,7 +457,7 @@ function startRearCamera() {
     /*
     ========================================================
     FIRST TRY:
-    BACK / ENVIRONMENT CAMERA
+    EXACT ENVIRONMENT CAMERA
     ========================================================
     */
 
@@ -898,24 +975,20 @@ function onScanSuccess(
 
     /*
     ========================================================
-    NEW PART BASIC INFO QR
+    PART BASIC INFO QR
     ========================================================
 
-    This is the new scan mode.
-
-    The QR value is treated directly as the
+    QR VALUE IS DIRECTLY THE
     INTERNAL PART NUMBER.
 
-    It does NOT require the QR itself to contain a URL.
+    Example:
 
-    Example QR content:
+    RRP-PART-001
 
-        RRP-PART-001
+    Opens:
 
-    It opens:
-
-        ?page=partbasicinfo
-        &internalPart=RRP-PART-001
+    ?page=partbasicinfo
+    &internalPart=RRP-PART-001
 
     ========================================================
     */
@@ -924,12 +997,6 @@ function onScanSuccess(
         scanType === "partbasic"
     ) {
 
-
-        /*
-        ====================================================
-        VALIDATE SCANNED VALUE
-        ====================================================
-        */
 
         if (
             !scannedValue
@@ -946,17 +1013,10 @@ function onScanSuccess(
 
             scanLocked = false;
 
-
             return;
 
         }
 
-
-        /*
-        ====================================================
-        SHOW SUCCESS
-        ====================================================
-        */
 
         showSuccess(
 
@@ -975,20 +1035,8 @@ function onScanSuccess(
         );
 
 
-        /*
-        ====================================================
-        STOP SCANNER
-        ====================================================
-        */
-
         stopScanner();
 
-
-        /*
-        ====================================================
-        CREATE PART BASIC INFO URL
-        ====================================================
-        */
 
         const partBasicURL =
 
@@ -1009,10 +1057,138 @@ function onScanSuccess(
             );
 
 
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+
+                    partBasicURL;
+
+            },
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    BLANK CUTTING INFO QR
+    ========================================================
+
+    QR VALUE IS DIRECTLY THE
+    INTERNAL PART NUMBER.
+
+    Example:
+
+    RRP-PART-001
+
+    Opens:
+
+    ?page=blankcuttinginfo
+    &internalPart=RRP-PART-001
+
+    ========================================================
+    */
+
+    if (
+        scanType === "blankcutting"
+    ) {
+
+
         /*
-        ====================================================
-        OPEN PART BASIC INFO
-        ====================================================
+        ----------------------------------------------------
+        VALIDATE
+        ----------------------------------------------------
+        */
+
+        if (
+            !scannedValue
+        ) {
+
+            showError(
+
+                "❌ Empty Part QR.<br><br>" +
+
+                "Please scan a valid Internal Part QR."
+
+            );
+
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        /*
+        ----------------------------------------------------
+        SHOW SUCCESS
+        ----------------------------------------------------
+        */
+
+        showSuccess(
+
+            "✅ PART QR SCANNED<br><br>" +
+
+            "Internal Part Number: <b>" +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
+            "</b><br><br>" +
+
+            "Opening Blank Cutting Info..."
+
+        );
+
+
+        /*
+        ----------------------------------------------------
+        STOP CAMERA
+        ----------------------------------------------------
+        */
+
+        stopScanner();
+
+
+        /*
+        ----------------------------------------------------
+        CREATE BLANK CUTTING URL
+        ----------------------------------------------------
+        */
+
+        const blankCuttingURL =
+
+            appURL +
+
+            "?page=blankcuttinginfo" +
+
+            "&internalPart=" +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        /*
+        ----------------------------------------------------
+        OPEN BLANK CUTTING PAGE
+        ----------------------------------------------------
         */
 
         setTimeout(
@@ -1021,7 +1197,7 @@ function onScanSuccess(
 
                 window.location.href =
 
-                    partBasicURL;
+                    blankCuttingURL;
 
             },
 
@@ -1125,7 +1301,6 @@ function onScanSuccess(
 
 
             scanLocked = false;
-
 
             return;
 
@@ -1246,7 +1421,6 @@ function onScanSuccess(
 
             scanLocked = false;
 
-
             return;
 
         }
@@ -1284,7 +1458,6 @@ function onScanSuccess(
 
 
             scanLocked = false;
-
 
             return;
 
@@ -1356,7 +1529,17 @@ function onScanSuccess(
     */
 
     showError(
-        "❌ Unknown scan mode."
+
+        "❌ Unknown scan mode: <b>" +
+
+        escapeHtml(
+            scanType
+        ) +
+
+        "</b><br><br>" +
+
+        "Please return to RRP Part Information and try again."
+
     );
 
 
