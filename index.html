@@ -17,7 +17,6 @@
 }
 
 body {
-
     font-family:
         Arial,
         Helvetica,
@@ -28,12 +27,9 @@ body {
     padding: 20px;
 
     background: #f2f2f2;
-
 }
 
-
 .container {
-
     max-width: 500px;
 
     margin: auto;
@@ -43,30 +39,21 @@ body {
     padding: 20px;
 
     border-radius: 12px;
-
 }
 
-
 h2 {
-
     text-align: center;
 
     margin-top: 5px;
-
 }
 
-
 #reader {
-
     width: 100%;
 
     margin-top: 20px;
-
 }
 
-
 #message {
-
     text-align: center;
 
     margin-top: 15px;
@@ -76,28 +63,18 @@ h2 {
     word-break: break-word;
 
     line-height: 1.5;
-
 }
-
 
 .error {
-
     color: #c62828;
-
 }
-
 
 .success {
-
     color: #2e7d32;
-
 }
 
-
 .info {
-
     color: #555;
-
 }
 
 </style>
@@ -114,9 +91,7 @@ h2 {
         RRP QR SCANNER
     </h2>
 
-
     <div id="reader"></div>
-
 
     <div id="message"
          class="info">
@@ -180,7 +155,10 @@ const params =
 SCAN TYPE
 ============================================================
 
+Supported:
+
 part
+partbasic
 tray
 production
 batch
@@ -357,6 +335,22 @@ function showScanMessage() {
 
     }
 
+    /*
+    ========================================================
+    NEW PART BASIC INFO MODE
+    ========================================================
+    */
+
+    else if (
+        scanType === "partbasic"
+    ) {
+
+        message.innerHTML =
+
+            "📋 Point the camera at the INTERNAL PART QR";
+
+    }
+
     else {
 
         message.innerHTML =
@@ -399,17 +393,12 @@ function startRearCamera() {
         },
 
         {
-
             fps: 10,
 
             qrbox: {
-
                 width: 250,
-
                 height: 250
-
             }
-
         },
 
         onScanSuccess
@@ -450,17 +439,12 @@ function startRearCamera() {
                 },
 
                 {
-
                     fps: 10,
 
                     qrbox: {
-
                         width: 250,
-
                         height: 250
-
                     }
-
                 },
 
                 onScanSuccess
@@ -515,9 +499,11 @@ FIND REAR CAMERA FROM CAMERA LIST
 
 function startRearCameraFromList() {
 
+
     /*
-    If a scanner instance is already active/partially active,
-    stop it first.
+    ========================================================
+    STOP EXISTING SCANNER
+    ========================================================
     */
 
     try {
@@ -536,9 +522,9 @@ function startRearCameraFromList() {
 
 
     /*
-    --------------------------------------------------------
+    ========================================================
     CREATE FRESH SCANNER
-    --------------------------------------------------------
+    ========================================================
     */
 
     scanner =
@@ -547,6 +533,12 @@ function startRearCameraFromList() {
             "reader"
         );
 
+
+    /*
+    ========================================================
+    GET CAMERAS
+    ========================================================
+    */
 
     Html5Qrcode.getCameras()
 
@@ -570,24 +562,18 @@ function startRearCameraFromList() {
 
 
                 /*
-                ==================================================
+                ==============================================
                 FIND REAR CAMERA
-                ==================================================
+                ==============================================
                 */
 
-                let rearCamera =
-
-                    null;
+                let rearCamera = null;
 
 
                 for (
-
                     let i = 0;
-
                     i < cameras.length;
-
                     i++
-
                 ) {
 
                     const label =
@@ -615,7 +601,6 @@ function startRearCameraFromList() {
                     ) {
 
                         rearCamera =
-
                             cameras[i];
 
                         break;
@@ -626,19 +611,12 @@ function startRearCameraFromList() {
 
 
                 /*
-                ==================================================
-                FALLBACK IF LABELS DON'T IDENTIFY IT
-                ==================================================
+                ==============================================
+                FINAL FALLBACK
+                ==============================================
                 */
 
                 if (!rearCamera) {
-
-                    /*
-                    Most phones expose the rear camera
-                    as one of the non-user cameras.
-
-                    Try the first camera as final fallback.
-                    */
 
                     rearCamera =
                         cameras[0];
@@ -647,9 +625,9 @@ function startRearCameraFromList() {
 
 
                 /*
-                ==================================================
-                START REAR CAMERA
-                ==================================================
+                ==============================================
+                START CAMERA
+                ==============================================
                 */
 
                 scanner.start(
@@ -657,17 +635,12 @@ function startRearCameraFromList() {
                     rearCamera.id,
 
                     {
-
                         fps: 10,
 
                         qrbox: {
-
                             width: 250,
-
                             height: 250
-
                         }
-
                     },
 
                     onScanSuccess
@@ -750,9 +723,9 @@ function onScanSuccess(
 
 
     /*
-    --------------------------------------------------------
+    ========================================================
     PREVENT MULTIPLE SCANS
-    --------------------------------------------------------
+    ========================================================
     */
 
     if (
@@ -778,9 +751,7 @@ function onScanSuccess(
     ========================================================
     */
 
-    let scannedURL =
-
-        null;
+    let scannedURL = null;
 
 
     try {
@@ -795,9 +766,7 @@ function onScanSuccess(
 
     catch(error) {
 
-        scannedURL =
-
-            null;
+        scannedURL = null;
 
     }
 
@@ -825,9 +794,7 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
-
 
             return;
 
@@ -864,9 +831,7 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
-
 
             return;
 
@@ -917,7 +882,6 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
-
                     productionURL;
 
             },
@@ -934,7 +898,146 @@ function onScanSuccess(
 
     /*
     ========================================================
-    PART QR
+    NEW PART BASIC INFO QR
+    ========================================================
+
+    This is the new scan mode.
+
+    The QR value is treated directly as the
+    INTERNAL PART NUMBER.
+
+    It does NOT require the QR itself to contain a URL.
+
+    Example QR content:
+
+        RRP-PART-001
+
+    It opens:
+
+        ?page=partbasicinfo
+        &internalPart=RRP-PART-001
+
+    ========================================================
+    */
+
+    if (
+        scanType === "partbasic"
+    ) {
+
+
+        /*
+        ====================================================
+        VALIDATE SCANNED VALUE
+        ====================================================
+        */
+
+        if (
+            !scannedValue
+        ) {
+
+            showError(
+
+                "❌ Empty Part QR.<br><br>" +
+
+                "Please scan a valid Internal Part QR."
+
+            );
+
+
+            scanLocked = false;
+
+
+            return;
+
+        }
+
+
+        /*
+        ====================================================
+        SHOW SUCCESS
+        ====================================================
+        */
+
+        showSuccess(
+
+            "✅ PART QR SCANNED<br><br>" +
+
+            "Internal Part Number: <b>" +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
+            "</b><br><br>" +
+
+            "Opening Part Basic Info..."
+
+        );
+
+
+        /*
+        ====================================================
+        STOP SCANNER
+        ====================================================
+        */
+
+        stopScanner();
+
+
+        /*
+        ====================================================
+        CREATE PART BASIC INFO URL
+        ====================================================
+        */
+
+        const partBasicURL =
+
+            appURL +
+
+            "?page=partbasicinfo" +
+
+            "&internalPart=" +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        /*
+        ====================================================
+        OPEN PART BASIC INFO
+        ====================================================
+        */
+
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+
+                    partBasicURL;
+
+            },
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    EXISTING PART QR
     ========================================================
     */
 
@@ -987,7 +1090,6 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
-
                     partURL;
 
             },
@@ -1104,7 +1206,6 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
-
                     trayURL;
 
             },
@@ -1234,7 +1335,6 @@ function onScanSuccess(
             function() {
 
                 window.location.href =
-
                     batchURL;
 
             },
@@ -1280,9 +1380,7 @@ function stopScanner() {
         scanner.stop()
 
             .catch(
-
                 function() {}
-
             );
 
     }
@@ -1392,6 +1490,7 @@ function escapeHtml(
 }
 
 </script>
+
 
 </body>
 
