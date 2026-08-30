@@ -192,6 +192,7 @@ part
 partbasic
 blankcutting
 toolinfo
+productiondetails
 tray
 production
 batch
@@ -436,6 +437,23 @@ function showScanMessage() {
         message.innerHTML =
 
             "🔧 Point the camera at the INTERNAL PART QR";
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    PRODUCTION DETAILS
+    --------------------------------------------------------
+    */
+
+    else if (
+        scanType === "productiondetails"
+    ) {
+
+        message.innerHTML =
+
+            "🏭 Point the camera at the INTERNAL PART QR";
 
     }
 
@@ -1315,6 +1333,95 @@ function onScanSuccess(
                 window.location.href =
 
                     toolInfoURL;
+
+            },
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    PRODUCTION DETAILS QR
+    ========================================================
+    */
+
+    if (
+        scanType === "productiondetails"
+    ) {
+
+        if (
+            !scannedValue
+        ) {
+
+            showError(
+
+                "❌ Empty Part QR.<br><br>" +
+
+                "Please scan a valid Internal Part QR."
+
+            );
+
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        showSuccess(
+
+            "✅ PART QR SCANNED<br><br>" +
+
+            "Internal Part Number: <b>" +
+
+            escapeHtml(
+                scannedValue
+            ) +
+
+            "</b><br><br>" +
+
+            "Opening Production Details..."
+
+        );
+
+
+        stopScanner();
+
+
+        const productionDetailsURL =
+
+            appURL +
+
+            "?page=productiondetails" +
+
+            "&internalPart=" +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+
+                    productionDetailsURL;
 
             },
 
