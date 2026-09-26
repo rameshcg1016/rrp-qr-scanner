@@ -196,6 +196,7 @@ productiondetails
 tray
 production
 batch
+rubberbatch
 
 ============================================================
 */
@@ -352,6 +353,23 @@ function showScanMessage() {
         message.innerHTML =
 
             "📦 Point the camera at the TRAY QR";
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    RUBBER BATCH
+    --------------------------------------------------------
+    */
+
+    else if (
+        scanType === "rubberbatch"
+    ) {
+
+        message.innerHTML =
+
+            "🧪 Point the camera at the RUBBER BATCH QR";
 
     }
 
@@ -928,6 +946,13 @@ function onScanSuccess(
             );
 
 
+        const qrPolymerCode =
+
+            scannedURL.searchParams.get(
+                "polymerCode"
+            ) || "";
+
+
         if (
 
             qrPage !== "production" ||
@@ -987,6 +1012,15 @@ function onScanSuccess(
 
             encodeURIComponent(
                 sessionToken
+            ) +
+
+            (
+                qrPolymerCode
+                    ? "&polymerCode=" +
+                      encodeURIComponent(
+                          qrPolymerCode
+                      )
+                    : ""
             );
 
 
@@ -1491,6 +1525,125 @@ function onScanSuccess(
 
                 window.location.href =
                     partURL;
+
+            },
+
+            500
+
+        );
+
+
+        return;
+
+    }
+
+
+    /*
+    ========================================================
+    RUBBER BATCH QR
+    ========================================================
+    */
+
+    if (
+        scanType === "rubberbatch"
+    ) {
+
+        if (
+            !existingPart
+        ) {
+
+            showError(
+                "❌ Part number is missing."
+            );
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        if (
+            !scannedValue
+        ) {
+
+            showError(
+                "❌ Rubber Batch QR is empty."
+            );
+
+            scanLocked = false;
+
+            return;
+
+        }
+
+
+        showSuccess(
+
+            "✅ RUBBER BATCH QR SCANNED<br><br>" +
+            "Returning to Supply Page..."
+
+        );
+
+
+        stopScanner();
+
+
+        const rubberBatchURL =
+
+            appURL +
+
+            "?page=supply" +
+
+            "&part=" +
+
+            encodeURIComponent(
+                existingPart
+            ) +
+
+            "&rubberBatch=" +
+
+            encodeURIComponent(
+                scannedValue
+            ) +
+
+            "&supplyDate=" +
+
+            encodeURIComponent(
+                supplyDate
+            ) +
+
+            "&suppliedKg=" +
+
+            encodeURIComponent(
+                suppliedKg
+            ) +
+
+            "&targetQty=" +
+
+            encodeURIComponent(
+                targetQty
+            ) +
+
+            "&remarks=" +
+
+            encodeURIComponent(
+                remarks
+            ) +
+
+            "&session=" +
+
+            encodeURIComponent(
+                sessionToken
+            );
+
+
+        setTimeout(
+
+            function() {
+
+                window.location.href =
+                    rubberBatchURL;
 
             },
 
