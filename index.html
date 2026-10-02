@@ -206,6 +206,16 @@ const scanType =
     params.get("type") || "part";
 
 
+
+/*
+============================================================
+COVER COUNT
+============================================================
+*/
+
+const coverCount = params.get("covers") || "";
+
+
 /*
 ============================================================
 EXISTING PART
@@ -1871,6 +1881,22 @@ function onScanSuccess(
 
             encodeURIComponent(
                 batchSupplyID
+            ) +
+
+
+
+            "&covers=" +
+
+
+
+            encodeURIComponent(
+
+
+
+                coverCount
+
+
+
             ) +
 
             "&session=" +
