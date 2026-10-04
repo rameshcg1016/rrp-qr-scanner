@@ -963,6 +963,33 @@ function onScanSuccess(
             ) || "";
 
 
+        const qrCustomerName =
+
+            scannedURL.searchParams.get(
+                "customerName"
+            ) || "";
+
+
+        const qrPartNumber =
+
+            scannedURL.searchParams.get(
+                "partNumber"
+            ) || "";
+
+
+        const qrInternalPartNumber =
+
+            scannedURL.searchParams.get(
+                "internalPartNumber"
+            ) || "";
+
+
+        const qrRubberSupplyDate =
+
+            scannedURL.searchParams.get(
+                "rubberSupplyDate"
+            ) || "";
+
         if (
 
             qrPage !== "production" ||
@@ -1029,6 +1056,42 @@ function onScanSuccess(
                     ? "&polymerCode=" +
                       encodeURIComponent(
                           qrPolymerCode
+                      )
+                    : ""
+            ) +
+
+            (
+                qrCustomerName
+                    ? "&customerName=" +
+                      encodeURIComponent(
+                          qrCustomerName
+                      )
+                    : ""
+            ) +
+
+            (
+                qrPartNumber
+                    ? "&partNumber=" +
+                      encodeURIComponent(
+                          qrPartNumber
+                      )
+                    : ""
+            ) +
+
+            (
+                qrInternalPartNumber
+                    ? "&internalPartNumber=" +
+                      encodeURIComponent(
+                          qrInternalPartNumber
+                      )
+                    : ""
+            ) +
+
+            (
+                qrRubberSupplyDate
+                    ? "&rubberSupplyDate=" +
+                      encodeURIComponent(
+                          qrRubberSupplyDate
                       )
                     : ""
             );
