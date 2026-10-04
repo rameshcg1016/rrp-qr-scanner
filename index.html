@@ -1900,7 +1900,28 @@ function onScanSuccess(
 
 
 
-        if (
+        
+        const batchCustomerName =
+            scannedURL.searchParams.get(
+                "customerName"
+            ) || "";
+
+        const batchPartNumber =
+            scannedURL.searchParams.get(
+                "partNumber"
+            ) || "";
+
+        const batchInternalPartNumber =
+            scannedURL.searchParams.get(
+                "internalPartNumber"
+            ) || "";
+
+        const batchRubberSupplyDate =
+            scannedURL.searchParams.get(
+                "rubberSupplyDate"
+            ) || "";
+
+if (
 
             batchQRPage !== "production" ||
 
@@ -1986,6 +2007,27 @@ function onScanSuccess(
 
                 batchRubberBatchCodes
 
+            ) +
+
+            
+            "&customerName=" +
+            encodeURIComponent(
+                batchCustomerName
+            ) +
+
+            "&partNumber=" +
+            encodeURIComponent(
+                batchPartNumber
+            ) +
+
+            "&internalPartNumber=" +
+            encodeURIComponent(
+                batchInternalPartNumber
+            ) +
+
+            "&rubberSupplyDate=" +
+            encodeURIComponent(
+                batchRubberSupplyDate
             ) +
 
             "&session=" +
