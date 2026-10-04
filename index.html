@@ -1241,7 +1241,7 @@ function onScanSuccess(
         ) {
 
             showError(
-                "❌ Invalid Production QR.<br><br>" +
+                "❌ Invalid Production / Batch QR.<br><br>" +
                 "The QR data could not be read as a URL or " +
                 "query parameter string."
             );
@@ -1304,11 +1304,12 @@ function onScanSuccess(
         const missingFields = [];
 
         if (
-            sfgQRPage !== "production"
+            sfgQRPage !== "production" &&
+            sfgQRPage !== "batch"
         ) {
 
             missingFields.push(
-                "page=production"
+                "page=production or page=batch"
             );
 
         }
@@ -1412,7 +1413,10 @@ function onScanSuccess(
         */
 
         showSuccess(
-            "✅ PRODUCTION QR SCANNED<br><br>" +
+            "✅ " +
+            (sfgQRPage === "batch"
+                ? "BATCH QR SCANNED<br><br>"
+                : "PRODUCTION QR SCANNED<br><br>") +
             "Batch ID: <b>" +
             escapeHtml(
                 sfgBatchID
