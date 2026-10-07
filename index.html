@@ -502,7 +502,9 @@ function showScanMessage() {
             "📦 Point the camera at the PRODUCTION QR";
 
     }
-\n\n    /*
+
+
+    /*
     --------------------------------------------------------
     SFG INSPECTION RETURN
     --------------------------------------------------------
@@ -543,345 +545,186 @@ START REAR / BACK CAMERA
 
 function startRearCamera() {
 
-    scanner =
+    const message = document.getElementById("message");
 
-        new Html5Qrcode(
-            "reader"
+    if (!window.isSecureContext) {
+        showError(
+            "❌ Camera requires HTTPS.<br><br>" +
+            "Please open the GitHub scanner using the HTTPS URL."
         );
-
-
-    /*
-    ========================================================
-    FIRST TRY:
-    EXACT ENVIRONMENT CAMERA
-    ========================================================
-    */
-
-    scanner.start(
-
-        {
-            facingMode: {
-                exact: "environment"
-            }
-        },
-
-        {
-            fps: 10,
-
-            qrbox: {
-                width: 250,
-                height: 250
-            }
-        },
-
-        onScanSuccess
-
-    )
-
-    .then(
-
-        function() {
-
-            showScanMessage();
-
-        }
-
-    )
-
-    .catch(
-
-        function(error) {
-
-            console.log(
-                "Exact rear camera failed:",
-                error
-            );
-
-
-            /*
-            ==================================================
-            SECOND TRY:
-            ENVIRONMENT CAMERA
-            ==================================================
-            */
-
-            scanner.start(
-
-                {
-                    facingMode: "environment"
-                },
-
-                {
-                    fps: 10,
-
-                    qrbox: {
-                        width: 250,
-                        height: 250
-                    }
-                },
-
-                onScanSuccess
-
-            )
-
-            .then(
-
-                function() {
-
-                    showScanMessage();
-
-                }
-
-            )
-
-            .catch(
-
-                function(error2) {
-
-                    console.log(
-                        "Environment camera failed:",
-                        error2
-                    );
-
-
-                    /*
-                    ==========================================
-                    FINAL FALLBACK
-                    ==========================================
-                    */
-
-                    startRearCameraFromList();
-
-                }
-
-            );
-
-        }
-
-    );
-
-}
-
-
-/*
-============================================================
-FALLBACK:
-FIND REAR CAMERA FROM CAMERA LIST
-============================================================
-*/
-
-function startRearCameraFromList() {
-
-
-    /*
-    ========================================================
-    STOP EXISTING SCANNER
-    ========================================================
-    */
-
-    try {
-
-        if (scanner) {
-
-            scanner.stop().catch(
-                function() {}
-            );
-
-        }
-
+        return;
     }
 
-    catch(error) {}
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showError(
+            "❌ This browser does not support camera access."
+        );
+        return;
+    }
 
+    if (typeof Html5Qrcode === "undefined") {
+        showError(
+            "❌ QR scanner library did not load.<br><br>" +
+            "Please refresh the page and try again."
+        );
+        return;
+    }
+
+    message.innerHTML = "📷 Requesting camera permission...";
 
     /*
-    ========================================================
-    CREATE FRESH SCANNER
-    ========================================================
+    ------------------------------------------------------------
+    STEP 1 - REQUEST CAMERA PERMISSION
+    ------------------------------------------------------------
+    This forces the browser to show the camera permission prompt.
+    ------------------------------------------------------------
     */
 
-    scanner =
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: {
+                ideal: "environment"
+            }
+        },
+        audio: false
+    })
 
-        new Html5Qrcode(
-            "reader"
+    .then(function(stream) {
+
+        /*
+        --------------------------------------------------------
+        Permission was granted.
+        Stop this temporary stream because html5-qrcode
+        will open the camera itself.
+        --------------------------------------------------------
+        */
+
+        try {
+            stream.getTracks().forEach(function(track) {
+                track.stop();
+            });
+        }
+        catch(error) {}
+
+        message.innerHTML = "📷 Starting camera...";
+
+        /*
+        --------------------------------------------------------
+        STEP 2 - GET AVAILABLE CAMERAS
+        --------------------------------------------------------
+        */
+
+        return Html5Qrcode.getCameras();
+
+    })
+
+    .then(function(cameras) {
+
+        if (!cameras || cameras.length === 0) {
+            throw new Error("No camera was detected on this device.");
+        }
+
+        let rearCamera = null;
+
+        /*
+        --------------------------------------------------------
+        Prefer rear / back / environment camera
+        --------------------------------------------------------
+        */
+
+        for (let i = 0; i < cameras.length; i++) {
+
+            const label =
+                String(cameras[i].label || "").toLowerCase();
+
+            if (
+                label.indexOf("back") !== -1 ||
+                label.indexOf("rear") !== -1 ||
+                label.indexOf("environment") !== -1
+            ) {
+                rearCamera = cameras[i];
+                break;
+            }
+        }
+
+        if (!rearCamera) {
+            rearCamera = cameras[0];
+        }
+
+        /*
+        --------------------------------------------------------
+        STEP 3 - CREATE SCANNER
+        --------------------------------------------------------
+        */
+
+        scanner = new Html5Qrcode("reader");
+
+        return scanner.start(
+            rearCamera.id,
+            {
+                fps: 10,
+                qrbox: {
+                    width: 250,
+                    height: 250
+                },
+                aspectRatio: 1.0
+            },
+            onScanSuccess
         );
 
+    })
 
-    /*
-    ========================================================
-    GET CAMERAS
-    ========================================================
-    */
+    .then(function() {
 
-    Html5Qrcode.getCameras()
+        showScanMessage();
 
-        .then(
+    })
 
-            function(cameras) {
+    .catch(function(error) {
 
+        console.error("Camera startup error:", error);
 
-                if (
-                    !cameras ||
-                    cameras.length === 0
-                ) {
-
-                    showError(
-                        "❌ No camera found."
-                    );
-
-                    return;
-
-                }
-
-
-                /*
-                ==============================================
-                FIND REAR CAMERA
-                ==============================================
-                */
-
-                let rearCamera = null;
-
-
-                for (
-                    let i = 0;
-                    i < cameras.length;
-                    i++
-                ) {
-
-                    const label =
-
-                        String(
-                            cameras[i].label || ""
-                        )
-                        .toLowerCase();
-
-
-                    if (
-
-                        label.indexOf(
-                            "back"
-                        ) !== -1 ||
-
-                        label.indexOf(
-                            "rear"
-                        ) !== -1 ||
-
-                        label.indexOf(
-                            "environment"
-                        ) !== -1
-
-                    ) {
-
-                        rearCamera =
-                            cameras[i];
-
-                        break;
-
-                    }
-
-                }
-
-
-                /*
-                ==============================================
-                FINAL FALLBACK
-                ==============================================
-                */
-
-                if (!rearCamera) {
-
-                    rearCamera =
-                        cameras[0];
-
-                }
-
-
-                /*
-                ==============================================
-                START CAMERA
-                ==============================================
-                */
-
-                scanner.start(
-
-                    rearCamera.id,
-
-                    {
-                        fps: 10,
-
-                        qrbox: {
-                            width: 250,
-                            height: 250
-                        }
-                    },
-
-                    onScanSuccess
-
-                )
-
-                .then(
-
-                    function() {
-
-                        showScanMessage();
-
-                    }
-
-                )
-
-                .catch(
-
-                    function(error) {
-
-                        showError(
-
-                            "❌ Camera error:<br>" +
-
-                            escapeHtml(
-                                error
-                            )
-
-                        );
-
-                    }
-
-                );
-
-            }
-
-        )
-
-        .catch(
-
-            function(error) {
-
-                showError(
-
-                    "❌ Unable to access camera:<br>" +
-
-                    escapeHtml(
-                        error
-                    )
-
-                );
-
-            }
-
+        let msg = String(
+            error && error.message
+                ? error.message
+                : error
         );
 
+        if (
+            msg.toLowerCase().indexOf("permission") !== -1 ||
+            msg.toLowerCase().indexOf("denied") !== -1 ||
+            msg.toLowerCase().indexOf("notallowed") !== -1
+        ) {
+            msg =
+                "Camera permission was denied.<br><br>" +
+                "Please allow Camera permission for " +
+                "rameshcg1016.github.io and refresh the page.";
+        }
+
+        showError(
+            "❌ Unable to start camera.<br><br>" +
+            escapeHtml(msg)
+        );
+
+    });
 }
 
 
 /*
 ============================================================
-INITIALIZE REAR CAMERA
+INITIALIZE SCANNER AFTER PAGE LOAD
 ============================================================
 */
 
-showScanMessage();
+window.addEventListener("load", function() {
 
-startRearCamera();
+    showScanMessage();
+
+    setTimeout(function() {
+        startRearCamera();
+    }, 100);
+
+});
 
 
 /*
