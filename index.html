@@ -199,6 +199,7 @@ batch
 rubberbatch
 sfgstore-inward
 sfginspectionreturn
+sfg-out
 
 ============================================================
 */
@@ -416,6 +417,23 @@ function showScanMessage() {
         message.innerHTML =
 
             "🏷️ Point the camera at the SUPPLY QR";
+
+    }
+
+
+    /*
+    --------------------------------------------------------
+    SFG-OUT
+    --------------------------------------------------------
+    */
+
+    else if (
+        scanType === "sfg-out"
+    ) {
+
+        message.innerHTML =
+
+            "📤 Point the camera at the PRODUCTION / BATCH QR";
 
     }
 
@@ -988,6 +1006,77 @@ function onScanSuccess(
 
         return;
 
+    }
+
+
+    /*
+    ========================================================
+    SFG-OUT QR
+    ========================================================
+    Accept existing production/batch QR URLs or query strings.
+    Keep the original QR parameter names unchanged.
+    ========================================================
+    */
+
+    if (
+        scanType === "sfg-out"
+    ) {
+
+        let outURL = null;
+
+        try {
+            outURL = new URL(scannedValue);
+        }
+        catch (error1) {
+            try {
+                if (scannedValue.startsWith("?")) {
+                    outURL = new URL(scannedValue, window.location.origin);
+                } else {
+                    outURL = new URL("?" + scannedValue, window.location.origin);
+                }
+            }
+            catch (error2) {
+                outURL = null;
+            }
+        }
+
+        if (!outURL) {
+            scanLocked = false;
+            showError("❌ Invalid QR. Please scan a valid PRODUCTION / BATCH QR.");
+            return;
+        }
+
+        const outParams = outURL.searchParams;
+        const outPage = (outParams.get("page") || "").toLowerCase();
+        const outBatchID = outParams.get("id") || outParams.get("batchId") || "";
+        const outCustomerName = outParams.get("customerName") || "";
+        const outPartNumber = outParams.get("partNumber") || "";
+        const outInternalPartNumber = outParams.get("internalPartNumber") || "";
+
+        if (!["production", "batch"].includes(outPage) || !outBatchID) {
+            scanLocked = false;
+            showError("❌ Invalid Production QR. The QR must contain page=production or page=batch and an ID.");
+            return;
+        }
+
+        const redirectURL =
+            appURL +
+            "?page=sfg-out" +
+            "&id=" + encodeURIComponent(outBatchID) +
+            "&customerName=" + encodeURIComponent(outCustomerName) +
+            "&partNumber=" + encodeURIComponent(outPartNumber) +
+            "&internalPartNumber=" + encodeURIComponent(outInternalPartNumber) +
+            "&session=" + encodeURIComponent(sessionToken);
+
+        document.getElementById("message").innerHTML =
+            "✅ QR scanned. Opening SFG-OUT...";
+
+        if (typeof html5QrcodeScanner !== "undefined" && html5QrcodeScanner) {
+            try { html5QrcodeScanner.clear(); } catch (e) {}
+        }
+
+        window.location.href = redirectURL;
+        return;
     }
 
 
