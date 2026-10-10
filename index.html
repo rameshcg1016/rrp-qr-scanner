@@ -2366,6 +2366,7 @@ function onScanSuccess(
             "&customerName=" + encodeURIComponent(inspectionCustomer) +
             "&partNumber=" + encodeURIComponent(inspectionPart) +
             "&internalPartNumber=" + encodeURIComponent(inspectionInternalPart) +
+            "&sourceQR=" + encodeURIComponent(scannedURL.toString()) +
             "&session=" + encodeURIComponent(sessionToken);
 
         setTimeout(function() {
