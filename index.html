@@ -2326,6 +2326,58 @@ function onScanSuccess(
 
     /*
     ========================================================
+    LINE INSPECTION LOG QR
+    ========================================================
+    Accept the existing QR URL with page=batch and read the
+    original id/customerName/partNumber/internalPartNumber.
+    Do not modify the original QR payload.
+    */
+
+    if (scanType === "inspectionlog") {
+        if (!scannedURL) {
+            showError("❌ Invalid Batch QR.<br><br>Please scan the existing RRP batch QR URL.");
+            scanLocked = false;
+            return;
+        }
+
+        const inspectionQRPage = (scannedURL.searchParams.get("page") || "").toLowerCase();
+        const inspectionBatchID = scannedURL.searchParams.get("id") || "";
+        const inspectionCustomer = scannedURL.searchParams.get("customerName") || "";
+        const inspectionPart = scannedURL.searchParams.get("partNumber") || "";
+        const inspectionInternalPart = scannedURL.searchParams.get("internalPartNumber") || "";
+
+        if (inspectionQRPage !== "batch" || !inspectionBatchID ||
+            !inspectionCustomer || !inspectionPart || !inspectionInternalPart) {
+            showError("❌ Invalid Batch QR.<br><br>The QR must contain page=batch, id, customerName, partNumber and internalPartNumber.");
+            scanLocked = false;
+            return;
+        }
+
+        showSuccess("✅ BATCH QR SCANNED<br><br>Batch ID: <b>" +
+            escapeHtml(inspectionBatchID) +
+            "</b><br><br>Opening Line Inspection Log...");
+
+        stopScanner();
+
+        const inspectionURL =
+            appURL +
+            "?page=inspectionlog" +
+            "&batchId=" + encodeURIComponent(inspectionBatchID) +
+            "&customerName=" + encodeURIComponent(inspectionCustomer) +
+            "&partNumber=" + encodeURIComponent(inspectionPart) +
+            "&internalPartNumber=" + encodeURIComponent(inspectionInternalPart) +
+            "&session=" + encodeURIComponent(sessionToken);
+
+        setTimeout(function() {
+            window.top.location.href = inspectionURL;
+        }, 500);
+
+        return;
+    }
+
+
+    /*
+    ========================================================
     BATCH / SUPPLY QR
     ========================================================
     */
