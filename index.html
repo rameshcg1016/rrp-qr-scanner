@@ -529,6 +529,14 @@ function showScanMessage() {
     */
 
     else if (
+        scanType === "fg-inward"
+    ) {
+
+        message.innerHTML = "📦 Point the camera at the batch QR containing Inspection ID";
+
+    }
+
+    else if (
         scanType === "sfginspectionreturn"
     ) {
 
@@ -2332,6 +2340,39 @@ function onScanSuccess(
     original id/customerName/partNumber/internalPartNumber.
     Do not modify the original QR payload.
     */
+
+    if (scanType === "fg-inward") {
+        if (!scannedURL) {
+            showError("❌ Invalid Batch QR.<br><br>Please scan the RRP batch URL QR.");
+            scanLocked = false;
+            return;
+        }
+        const qrPage = (scannedURL.searchParams.get("page") || "").toLowerCase();
+        const inspectionId = scannedURL.searchParams.get("inspectionId") || "";
+        const batchId = scannedURL.searchParams.get("id") || "";
+        const customerName = scannedURL.searchParams.get("customerName") || "";
+        const internalPartNumber = scannedURL.searchParams.get("internalPartNumber") || "";
+        const partNumber = scannedURL.searchParams.get("partNumber") || "";
+        const totalInspectedQty = scannedURL.searchParams.get("totalInspectedQty") || scannedURL.searchParams.get("totalInspectionQty") || "";
+        if (qrPage !== "batch" || !inspectionId || !batchId || !customerName || !internalPartNumber || !partNumber || totalInspectedQty === "") {
+            showError("❌ Invalid Inspection QR.<br><br>Required parameters: page=batch, inspectionId, id, customerName, internalPartNumber, partNumber and totalInspectedQty.");
+            scanLocked = false;
+            return;
+        }
+        showSuccess("✅ INSPECTION QR SCANNED<br><br>Inspection ID: <b>" + escapeHtml(inspectionId) + "</b><br><br>Opening FG Inward...");
+        stopScanner();
+        const fgURL = appURL + "?page=fg-inward" +
+            "&inspectionId=" + encodeURIComponent(inspectionId) +
+            "&batchId=" + encodeURIComponent(batchId) +
+            "&customerName=" + encodeURIComponent(customerName) +
+            "&internalPartNumber=" + encodeURIComponent(internalPartNumber) +
+            "&partNumber=" + encodeURIComponent(partNumber) +
+            "&totalInspectedQty=" + encodeURIComponent(totalInspectedQty) +
+            "&sourceQR=" + encodeURIComponent(scannedURL.toString()) +
+            "&session=" + encodeURIComponent(sessionToken);
+        setTimeout(function() { window.top.location.href = fgURL; }, 500);
+        return;
+    }
 
     if (scanType === "inspectionlog") {
         if (!scannedURL) {
