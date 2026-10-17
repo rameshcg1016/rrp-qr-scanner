@@ -2104,118 +2104,50 @@ function onScanSuccess(
     ========================================================
     */
 
-    if (
-        scanType === "rubberbatch"
-    ) {
-
-        if (
-            !existingPart
-        ) {
-
-            showError(
-                "❌ Part number is missing."
-            );
-
+    if (scanType === "rubberbatch") {
+        if (!existingPart) {
+            showError("❌ Part number is missing.");
             scanLocked = false;
-
             return;
-
         }
 
-
-        if (
-            !scannedValue
-        ) {
-
+        // Expected QR text: Batch ID: <value>
+        const batchMatch = scannedValue.match(/^\s*Batch\s*ID\s*:\s*(.+?)\s*$/im);
+        if (!batchMatch || !batchMatch[1].trim()) {
             showError(
-                "❌ Rubber Batch QR is empty."
+                "❌ Invalid Rubber Batch QR.<br><br>" +
+                "Expected format:<br><b>Batch ID: MB000123</b>"
             );
-
             scanLocked = false;
-
             return;
-
         }
 
+        const batchIDOnly = batchMatch[1].trim();
+        const normalizedBatchQR = "Batch ID: " + batchIDOnly;
 
         showSuccess(
-
             "✅ RUBBER BATCH QR SCANNED<br><br>" +
+            "Batch ID: <b>" + escapeHtml(batchIDOnly) + "</b><br><br>" +
             "Returning to Supply Page..."
-
         );
-
-
         stopScanner();
 
-
         const rubberBatchURL =
-
             appURL +
-
             "?page=supply" +
+            "&part=" + encodeURIComponent(existingPart) +
+            "&rubberBatch=" + encodeURIComponent(normalizedBatchQR) +
+            "&supplyDate=" + encodeURIComponent(supplyDate) +
+            "&suppliedKg=" + encodeURIComponent(suppliedKg) +
+            "&targetQty=" + encodeURIComponent(targetQty) +
+            "&remarks=" + encodeURIComponent(remarks) +
+            "&session=" + encodeURIComponent(sessionToken);
 
-            "&part=" +
-
-            encodeURIComponent(
-                existingPart
-            ) +
-
-            "&rubberBatch=" +
-
-            encodeURIComponent(
-                scannedValue
-            ) +
-
-            "&supplyDate=" +
-
-            encodeURIComponent(
-                supplyDate
-            ) +
-
-            "&suppliedKg=" +
-
-            encodeURIComponent(
-                suppliedKg
-            ) +
-
-            "&targetQty=" +
-
-            encodeURIComponent(
-                targetQty
-            ) +
-
-            "&remarks=" +
-
-            encodeURIComponent(
-                remarks
-            ) +
-
-            "&session=" +
-
-            encodeURIComponent(
-                sessionToken
-            );
-
-
-        setTimeout(
-
-            function() {
-
-                window.top.location.href =
-                    rubberBatchURL;
-
-            },
-
-            500
-
-        );
-
-
+        setTimeout(function () {
+            window.top.location.href = rubberBatchURL;
+        }, 500);
         return;
-
     }
-
 
     /*
     ========================================================
