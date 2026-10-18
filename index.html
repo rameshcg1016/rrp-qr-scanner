@@ -190,6 +190,7 @@ SUPPORTED MODES:
 
 part
 partbasic
+production-supply
 blankcutting
 toolinfo
 productiondetails
@@ -386,6 +387,16 @@ function showScanMessage() {
 
     }
 
+
+    /*
+    --------------------------------------------------------
+    PRODUCTION RUBBER SUPPLY QR
+    --------------------------------------------------------
+    */
+
+    else if (scanType === "production-supply") {
+        message.innerHTML = "📦 Point the camera at the RUBBER SUPPLY QR (Mixing Batch ID + Tray Number + Rubber Supply ID)";
+    }
 
     /*
     --------------------------------------------------------
@@ -815,7 +826,47 @@ function onScanSuccess(
 
     /*
     ========================================================
-    PRODUCTION QR
+    PRODUCTION RUBBER SUPPLY QR (PLAIN TEXT)
+    Expected QR fields:
+      Mixing Batch ID: ...
+      Tray Number: ...
+      Rubber Supply ID: ...
+    ========================================================
+    */
+
+    if (scanType === "production-supply") {
+        const mixingMatch = scannedValue.match(/^\s*Mixing\s*Batch\s*ID\s*:\s*(.+?)\s*$/im);
+        const trayMatch = scannedValue.match(/^\s*Tray\s*Number\s*:\s*(.+?)\s*$/im);
+        const supplyMatch = scannedValue.match(/^\s*Rubber\s*Supply\s*ID\s*:\s*(.+?)\s*$/im);
+
+        const mixingBatchID = mixingMatch ? mixingMatch[1].trim() : "";
+        const trayNumber = trayMatch ? trayMatch[1].trim() : "";
+        const rubberSupplyID = supplyMatch ? supplyMatch[1].trim() : "";
+
+        if (!mixingBatchID || !trayNumber || !rubberSupplyID) {
+            showError("❌ Invalid Rubber Supply QR.<br><br>QR must contain Mixing Batch ID, Tray Number and Rubber Supply ID.");
+            scanLocked = false;
+            return;
+        }
+
+        showSuccess("✅ RUBBER SUPPLY QR SCANNED<br><br>Rubber Supply ID: <b>" +
+            escapeHtml(rubberSupplyID) + "</b><br><br>Loading SupplyMaster details...");
+        stopScanner();
+
+        const productionPageURL = appURL + "?page=production" +
+            "&id=" + encodeURIComponent(rubberSupplyID) +
+            "&session=" + encodeURIComponent(sessionToken);
+
+        setTimeout(function() {
+            window.top.location.href = productionPageURL;
+        }, 400);
+        return;
+    }
+
+
+    /*
+    ========================================================
+    PRODUCTION QR (LEGACY URL FORMAT)
     ========================================================
     */
 
