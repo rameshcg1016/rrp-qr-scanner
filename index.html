@@ -10,13 +10,11 @@
 
 <script src="https://unpkg.com/html5-qrcode"></script>
 
-
 <style>
 
 * {
     box-sizing: border-box;
 }
-
 
 body {
 
@@ -33,7 +31,6 @@ body {
 
 }
 
-
 .container {
 
     max-width: 500px;
@@ -48,7 +45,6 @@ body {
 
 }
 
-
 h2 {
 
     text-align: center;
@@ -57,7 +53,6 @@ h2 {
 
 }
 
-
 #reader {
 
     width: 100%;
@@ -65,7 +60,6 @@ h2 {
     margin-top: 20px;
 
 }
-
 
 #message {
 
@@ -81,20 +75,17 @@ h2 {
 
 }
 
-
 .error {
 
     color: #c62828;
 
 }
 
-
 .success {
 
     color: #2e7d32;
 
 }
-
 
 .info {
 
@@ -106,20 +97,15 @@ h2 {
 
 </head>
 
-
 <body>
 
-
 <div class="container">
-
 
 <h2>
     RRP QR SCANNER
 </h2>
 
-
 <div id="reader"></div>
-
 
 <div
     id="message"
@@ -130,12 +116,9 @@ h2 {
 
 </div>
 
-
 </div>
 
-
 <script>
-
 
 /*
 ============================================================
@@ -151,7 +134,6 @@ const appURL =
 
     "/exec";
 
-
 /*
 ============================================================
 GITHUB SCANNER URL
@@ -161,7 +143,6 @@ GITHUB SCANNER URL
 const scannerURL =
 
     "https://rameshcg1016.github.io/rrp-qr-scanner/";
-
 
 /*
 ============================================================
@@ -175,11 +156,9 @@ const currentURL =
         window.location.href
     );
 
-
 const params =
 
     currentURL.searchParams;
-
 
 /*
 ============================================================
@@ -209,8 +188,6 @@ const scanType =
 
     params.get("type") || "part";
 
-
-
 /*
 ============================================================
 COVER COUNT
@@ -218,7 +195,6 @@ COVER COUNT
 */
 
 const coverCount = params.get("covers") || "";
-
 
 /*
 ============================================================
@@ -230,7 +206,6 @@ const existingPart =
 
     params.get("part") || "";
 
-
 /*
 ============================================================
 SUPPLY DATA
@@ -241,21 +216,17 @@ const supplyDate =
 
     params.get("supplyDate") || "";
 
-
 const suppliedKg =
 
     params.get("suppliedKg") || "";
-
 
 const targetQty =
 
     params.get("targetQty") || "";
 
-
 const remarks =
 
     params.get("remarks") || "";
-
 
 /*
 ============================================================
@@ -266,7 +237,6 @@ SESSION TOKEN
 let sessionToken =
 
     params.get("session") || "";
-
 
 /*
 ============================================================
@@ -299,7 +269,6 @@ if (!sessionToken) {
 
 }
 
-
 /*
 ============================================================
 SAVE SESSION
@@ -327,7 +296,6 @@ if (sessionToken) {
 
 }
 
-
 /*
 ============================================================
 SCANNER VARIABLES
@@ -337,7 +305,6 @@ SCANNER VARIABLES
 let scanner = null;
 
 let scanLocked = false;
-
 
 /*
 ============================================================
@@ -352,7 +319,6 @@ function showScanMessage() {
         document.getElementById(
             "message"
         );
-
 
     /*
     --------------------------------------------------------
@@ -370,7 +336,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     RUBBER BATCH
@@ -386,7 +351,6 @@ function showScanMessage() {
             "🧪 Point the camera at the RUBBER BATCH QR";
 
     }
-
 
     /*
     --------------------------------------------------------
@@ -414,7 +378,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     BATCH
@@ -430,7 +393,6 @@ function showScanMessage() {
             "🏷️ Point the camera at the SUPPLY QR";
 
     }
-
 
     /*
     --------------------------------------------------------
@@ -448,7 +410,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     PART BASIC INFO
@@ -464,7 +425,6 @@ function showScanMessage() {
             "📋 Point the camera at the INTERNAL PART QR";
 
     }
-
 
     /*
     --------------------------------------------------------
@@ -482,7 +442,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     TOOL INFO
@@ -498,7 +457,6 @@ function showScanMessage() {
             "🔧 Point the camera at the INTERNAL PART QR";
 
     }
-
 
     /*
     --------------------------------------------------------
@@ -516,7 +474,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     SFG STORE INWARD
@@ -531,7 +488,6 @@ function showScanMessage() {
             "📦 Point the camera at the PRODUCTION QR";
 
     }
-
 
     /*
     --------------------------------------------------------
@@ -556,7 +512,6 @@ function showScanMessage() {
 
     }
 
-
     /*
     --------------------------------------------------------
     NORMAL PART
@@ -572,7 +527,6 @@ function showScanMessage() {
     }
 
 }
-
 
 /*
 ============================================================
@@ -746,7 +700,6 @@ function startRearCamera() {
     });
 }
 
-
 /*
 ============================================================
 INITIALIZE SCANNER AFTER PAGE LOAD
@@ -763,7 +716,6 @@ window.addEventListener("load", function() {
 
 });
 
-
 /*
 ============================================================
 QR SCAN SUCCESS
@@ -773,7 +725,6 @@ QR SCAN SUCCESS
 function onScanSuccess(
     decodedText
 ) {
-
 
     /*
     ========================================================
@@ -789,14 +740,11 @@ function onScanSuccess(
 
     }
 
-
     scanLocked = true;
-
 
     const scannedValue =
 
         decodedText.trim();
-
 
     /*
     ========================================================
@@ -805,7 +753,6 @@ function onScanSuccess(
     */
 
     let scannedURL = null;
-
 
     try {
 
@@ -822,7 +769,6 @@ function onScanSuccess(
         scannedURL = null;
 
     }
-
 
     /*
     ========================================================
@@ -863,7 +809,6 @@ function onScanSuccess(
         return;
     }
 
-
     /*
     ========================================================
     PRODUCTION QR (LEGACY URL FORMAT)
@@ -873,7 +818,6 @@ function onScanSuccess(
     if (
         scanType === "production"
     ) {
-
 
         if (
             !scannedURL
@@ -893,13 +837,11 @@ function onScanSuccess(
 
         }
 
-
         const qrPage =
 
             scannedURL.searchParams.get(
                 "page"
             );
-
 
         const supplyID =
 
@@ -907,13 +849,11 @@ function onScanSuccess(
                 "id"
             );
 
-
         const qrPolymerCode =
 
             scannedURL.searchParams.get(
                 "polymerCode"
             ) || "";
-
 
         const qrCustomerName =
 
@@ -921,20 +861,17 @@ function onScanSuccess(
                 "customerName"
             ) || "";
 
-
         const qrPartNumber =
 
             scannedURL.searchParams.get(
                 "partNumber"
             ) || "";
 
-
         const qrInternalPartNumber =
 
             scannedURL.searchParams.get(
                 "internalPartNumber"
             ) || "";
-
 
         const qrRubberSupplyDate =
 
@@ -964,7 +901,6 @@ function onScanSuccess(
 
         }
 
-
         showSuccess(
 
             "✅ SUPPLY QR SCANNED<br><br>" +
@@ -981,9 +917,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const productionURL =
 
@@ -1048,7 +982,6 @@ function onScanSuccess(
                     : ""
             );
 
-
         setTimeout(
 
             function() {
@@ -1062,11 +995,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -1138,7 +1069,6 @@ function onScanSuccess(
         return;
     }
 
-
     /*
     ========================================================
     SFG STORE INWARD QR
@@ -1168,6 +1098,50 @@ function onScanSuccess(
         scanType === "sfgstore-inward"
     ) {
 
+        /*
+        ----------------------------------------------------
+        NEW PLAIN-TEXT PRODUCTION BATCH QR
+        Expected text: Production Batch ID: BAT000001
+        Only the ID is sent to Apps Script. BatchItems is
+        then used server-side to fetch the remaining fields.
+        ----------------------------------------------------
+        */
+        const plainBatchMatch = scannedValue.match(/^\\s*Production\\s+Batch\\s+ID\\s*:\\s*(.+?)\\s*$/im);
+
+        if (plainBatchMatch) {
+            const productionBatchID = plainBatchMatch[1].trim();
+
+            if (!productionBatchID) {
+                showError("❌ Production Batch ID is empty.");
+                scanLocked = false;
+                return;
+            }
+
+            showSuccess(
+                "✅ PRODUCTION BATCH QR SCANNED<br><br>" +
+                "Batch ID: <b>" + escapeHtml(productionBatchID) +
+                "</b><br><br>Looking up BatchItems..."
+            );
+
+            stopScanner();
+
+            const inwardURL =
+                appURL +
+                "?page=sfgstore-inward" +
+                "&id=" + encodeURIComponent(productionBatchID) +
+                "&session=" + encodeURIComponent(sessionToken);
+
+            setTimeout(function() {
+                window.top.location.href = inwardURL;
+            }, 400);
+            return;
+        }
+
+        /*
+        ----------------------------------------------------
+        LEGACY URL / QUERY-STRING QR SUPPORT
+        ----------------------------------------------------
+        */
         /*
         ----------------------------------------------------
         BUILD A URL FROM THE SCANNED QR
@@ -1235,7 +1209,6 @@ function onScanSuccess(
 
         }
 
-
         /*
         ----------------------------------------------------
         VALIDATE QR FORMAT
@@ -1257,7 +1230,6 @@ function onScanSuccess(
             return;
 
         }
-
 
         /*
         ----------------------------------------------------
@@ -1299,7 +1271,6 @@ function onScanSuccess(
             sfgURLObject.searchParams.get(
                 "productionDate"
             ) || "";
-
 
         /*
         ----------------------------------------------------
@@ -1380,7 +1351,6 @@ function onScanSuccess(
 
         }
 
-
         if (
             missingFields.length > 0
         ) {
@@ -1411,7 +1381,6 @@ function onScanSuccess(
 
         }
 
-
         /*
         ----------------------------------------------------
         SHOW SUCCESS
@@ -1431,7 +1400,6 @@ function onScanSuccess(
             "Opening SFG Store Inward..."
         );
 
-
         /*
         ----------------------------------------------------
         STOP CAMERA
@@ -1439,7 +1407,6 @@ function onScanSuccess(
         */
 
         stopScanner();
-
 
         /*
         ----------------------------------------------------
@@ -1479,7 +1446,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         /*
         ----------------------------------------------------
         OPEN SFG STORE INWARD
@@ -1496,11 +1462,9 @@ function onScanSuccess(
             500
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -1653,7 +1617,6 @@ function onScanSuccess(
         return;
     }
 
-
     /*
     ========================================================
     PART BASIC INFO QR
@@ -1678,7 +1641,6 @@ function onScanSuccess(
         scanType === "partbasic"
     ) {
 
-
         if (
             !scannedValue
         ) {
@@ -1691,13 +1653,11 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         showSuccess(
 
@@ -1715,9 +1675,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const partBasicURL =
 
@@ -1737,7 +1695,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -1752,11 +1709,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -1782,7 +1737,6 @@ function onScanSuccess(
         scanType === "blankcutting"
     ) {
 
-
         /*
         ----------------------------------------------------
         VALIDATE
@@ -1801,13 +1755,11 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         /*
         ----------------------------------------------------
@@ -1831,7 +1783,6 @@ function onScanSuccess(
 
         );
 
-
         /*
         ----------------------------------------------------
         STOP CAMERA
@@ -1839,7 +1790,6 @@ function onScanSuccess(
         */
 
         stopScanner();
-
 
         /*
         ----------------------------------------------------
@@ -1865,7 +1815,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         /*
         ----------------------------------------------------
         OPEN BLANK CUTTING PAGE
@@ -1886,11 +1835,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -1924,13 +1871,11 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         showSuccess(
 
@@ -1948,9 +1893,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const toolInfoURL =
 
@@ -1970,7 +1913,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -1985,11 +1927,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -2013,13 +1953,11 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         showSuccess(
 
@@ -2037,9 +1975,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const productionDetailsURL =
 
@@ -2059,7 +1995,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -2074,11 +2009,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -2089,7 +2022,6 @@ function onScanSuccess(
     if (
         scanType === "part"
     ) {
-
 
         showSuccess(
 
@@ -2107,9 +2039,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const partURL =
 
@@ -2129,7 +2059,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -2143,11 +2072,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -2210,7 +2137,6 @@ function onScanSuccess(
         scanType === "tray"
     ) {
 
-
         if (
             !existingPart
         ) {
@@ -2219,13 +2145,11 @@ function onScanSuccess(
                 "❌ Part number is missing."
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         showSuccess(
 
@@ -2243,9 +2167,7 @@ function onScanSuccess(
 
         );
 
-
         stopScanner();
-
 
         const trayURL =
 
@@ -2295,7 +2217,6 @@ function onScanSuccess(
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -2309,11 +2230,9 @@ function onScanSuccess(
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -2400,7 +2319,6 @@ function onScanSuccess(
         return;
     }
 
-
     /*
     ========================================================
     BATCH / SUPPLY QR
@@ -2455,13 +2373,11 @@ function onScanSuccess(
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         const batchQRPage =
 
@@ -2469,13 +2385,11 @@ function onScanSuccess(
                 "page"
             );
 
-
         const batchSupplyID =
 
             scannedURL.searchParams.get(
                 "id"
             );
-
 
         const batchRubberBatchCodes =
 
@@ -2485,9 +2399,6 @@ function onScanSuccess(
 
             ) || "";
 
-
-
-        
         const batchCustomerName =
             scannedURL.searchParams.get(
                 "customerName"
@@ -2524,13 +2435,11 @@ if (
 
             );
 
-
             scanLocked = false;
 
             return;
 
         }
-
 
         showSuccess(
 
@@ -2548,9 +2457,7 @@ if (
 
         );
 
-
         stopScanner();
-
 
         const batchURL =
 
@@ -2564,19 +2471,11 @@ if (
                 batchSupplyID
             ) +
 
-
-
             "&covers=" +
-
-
 
             encodeURIComponent(
 
-
-
                 coverCount
-
-
 
             ) +
 
@@ -2596,7 +2495,6 @@ if (
 
             ) +
 
-            
             "&customerName=" +
             encodeURIComponent(
                 batchCustomerName
@@ -2623,7 +2521,6 @@ if (
                 sessionToken
             );
 
-
         setTimeout(
 
             function() {
@@ -2637,11 +2534,9 @@ if (
 
         );
 
-
         return;
 
     }
-
 
     /*
     ========================================================
@@ -2663,11 +2558,9 @@ if (
 
     );
 
-
     scanLocked = false;
 
 }
-
 
 /*
 ============================================================
@@ -2691,7 +2584,6 @@ function stopScanner() {
 
 }
 
-
 /*
 ============================================================
 SHOW ERROR
@@ -2708,16 +2600,13 @@ function showError(
             "message"
         );
 
-
     element.innerHTML =
         message;
-
 
     element.className =
         "error";
 
 }
-
 
 /*
 ============================================================
@@ -2735,16 +2624,13 @@ function showSuccess(
             "message"
         );
 
-
     element.innerHTML =
         message;
-
 
     element.className =
         "success";
 
 }
-
 
 /*
 ============================================================
@@ -2794,7 +2680,6 @@ function escapeHtml(
 }
 
 </script>
-
 
 </body>
 
