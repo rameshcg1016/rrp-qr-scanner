@@ -2407,14 +2407,45 @@ function onScanSuccess(
     ========================================================
     */
 
-    if (
-        scanType === "batch"
-    ) {
+    if (scanType === "batch") {
 
+        // Plain-text rubber supply QR:
+        // Mixing Batch ID: ...
+        // Tray Number: ...
+        // Rubber Supply ID: ...
+        if (!scannedURL) {
+            const mixingMatch = scannedValue.match(/^\s*Mixing\s*Batch\s*ID\s*:\s*(.+?)\s*$/im);
+            const trayMatch = scannedValue.match(/^\s*Tray\s*Number\s*:\s*(.+?)\s*$/im);
+            const supplyMatch = scannedValue.match(/^\s*Rubber\s*Supply\s*ID\s*:\s*(.+?)\s*$/im);
 
-        if (
-            !scannedURL
-        ) {
+            const mixingBatchID = mixingMatch ? mixingMatch[1].trim() : "";
+            const trayNumber = trayMatch ? trayMatch[1].trim() : "";
+            const rubberSupplyID = supplyMatch ? supplyMatch[1].trim() : "";
+
+            if (!mixingBatchID || !trayNumber || !rubberSupplyID) {
+                showError("❌ Invalid Rubber Supply QR.<br><br>QR must contain Mixing Batch ID, Tray Number and Rubber Supply ID.");
+                scanLocked = false;
+                return;
+            }
+
+            showSuccess("✅ RUBBER SUPPLY QR SCANNED<br><br>Rubber Supply ID: <b>" +
+                escapeHtml(rubberSupplyID) + "</b><br><br>Opening Batch Create Page...");
+            stopScanner();
+
+            const plainTextBatchURL = appURL +
+                "?page=batchcreate" +
+                "&scan=" + encodeURIComponent(rubberSupplyID) +
+                "&covers=" + encodeURIComponent(coverCount) +
+                "&fmbid=" + encodeURIComponent(rubberSupplyID) +
+                "&session=" + encodeURIComponent(sessionToken);
+
+            setTimeout(function() {
+                window.top.location.href = plainTextBatchURL;
+            }, 500);
+            return;
+        }
+
+        if (!scannedURL) {
 
             showError(
 
