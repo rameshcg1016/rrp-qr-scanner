@@ -1106,7 +1106,7 @@ function onScanSuccess(
         then used server-side to fetch the remaining fields.
         ----------------------------------------------------
         */
-        const plainBatchMatch = scannedValue.match(/^\\s*Production\\s+Batch\\s+ID\\s*:\\s*(.+?)\\s*$/im);
+        const plainBatchMatch = scannedValue.match(/^\s*Production\s+Batch\s+ID\s*:\s*(.+?)\s*$/im);
 
         if (plainBatchMatch) {
             const productionBatchID = plainBatchMatch[1].trim();
