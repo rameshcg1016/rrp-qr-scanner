@@ -1012,6 +1012,44 @@ function onScanSuccess(
         scanType === "sfg-out"
     ) {
 
+        /*
+        ----------------------------------------------------
+        PLAIN-TEXT PRODUCTION BATCH QR
+        Expected QR text: Production Batch ID:BATOPNSTOCK00018
+        The QR contains only the Batch ID label and value.
+        ----------------------------------------------------
+        */
+        const plainSFGOutBatchMatch = scannedValue.match(/^\s*Production\s+Batch\s+ID\s*:\s*(.+?)\s*$/im);
+
+        if (plainSFGOutBatchMatch) {
+            const productionBatchID = plainSFGOutBatchMatch[1].trim();
+
+            if (!productionBatchID) {
+                scanLocked = false;
+                showError("❌ Production Batch ID is empty.");
+                return;
+            }
+
+            showSuccess(
+                "✅ PRODUCTION BATCH QR SCANNED<br><br>" +
+                "Batch ID: <b>" + escapeHtml(productionBatchID) +
+                "</b><br><br>Opening SFG Outward..."
+            );
+
+            stopScanner();
+
+            const sfgOutURL =
+                appURL +
+                "?page=sfg-out" +
+                "&id=" + encodeURIComponent(productionBatchID) +
+                "&session=" + encodeURIComponent(sessionToken);
+
+            setTimeout(function() {
+                window.top.location.href = sfgOutURL;
+            }, 400);
+            return;
+        }
+
         let outURL = null;
 
         try {
