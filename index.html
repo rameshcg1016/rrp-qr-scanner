@@ -1527,131 +1527,57 @@ function onScanSuccess(
     if (
         scanType === "sfginspectionreturn"
     ) {
+        // QR text: Production Batch ID: <value>
+        const plainBatchMatch = scannedValue.match(/^\s*Production\s+Batch\s+ID\s*:\s*(.+?)\s*$/im);
+        let returnBatchID = plainBatchMatch ? plainBatchMatch[1].trim() : "";
 
-        let returnURLObject = null;
-
-        try {
-            returnURLObject = new URL(scannedValue);
-        }
-        catch (error1) {
+        // Backward compatibility with older production URL QR labels.
+        if (!returnBatchID) {
+            let returnURLObject = null;
             try {
-                if (scannedValue.charAt(0) === "?") {
-                    returnURLObject = new URL(
-                        "https://rrp.local/" + scannedValue
-                    );
-                }
-                else if (scannedValue.indexOf("=") !== -1) {
-                    returnURLObject = new URL(
-                        "https://rrp.local/?" + scannedValue
-                    );
+                returnURLObject = new URL(scannedValue);
+            } catch (error1) {
+                try {
+                    if (scannedValue.charAt(0) === "?") {
+                        returnURLObject = new URL("https://rrp.local/" + scannedValue);
+                    } else if (scannedValue.indexOf("=") !== -1) {
+                        returnURLObject = new URL("https://rrp.local/?" + scannedValue);
+                    }
+                } catch (error2) {
+                    returnURLObject = null;
                 }
             }
-            catch (error2) {
-                returnURLObject = null;
+
+            if (returnURLObject) {
+                const returnQRPage = returnURLObject.searchParams.get("page") || "";
+                if (returnQRPage === "production" || returnQRPage === "batch") {
+                    returnBatchID = returnURLObject.searchParams.get("id") || "";
+                }
             }
-        }
-
-        if (!returnURLObject) {
-            showError(
-                "❌ Invalid Production / Batch QR.<br><br>" +
-                "The QR data could not be read as a URL or query parameter string."
-            );
-            scanLocked = false;
-            return;
-        }
-
-        const returnQRPage =
-            returnURLObject.searchParams.get("page") || "";
-
-        const returnBatchID =
-            returnURLObject.searchParams.get("id") || "";
-
-        const returnCustomerName =
-            returnURLObject.searchParams.get("customerName") || "";
-
-        const returnPartNumber =
-            returnURLObject.searchParams.get("partNumber") || "";
-
-        const returnInternalPartNumber =
-            returnURLObject.searchParams.get("internalPartNumber") || "";
-
-        const returnActualQty =
-            returnURLObject.searchParams.get("actualQty") || "";
-
-        const returnProductionDate =
-            returnURLObject.searchParams.get("productionDate") || "";
-
-        const returnMissingFields = [];
-
-        if (
-            returnQRPage !== "production" &&
-            returnQRPage !== "batch"
-        ) {
-            returnMissingFields.push("page=production or page=batch");
         }
 
         if (!returnBatchID) {
-            returnMissingFields.push("Batch ID (id)");
-        }
-
-        if (!returnCustomerName) {
-            returnMissingFields.push("Customer Name (customerName)");
-        }
-
-        if (!returnPartNumber) {
-            returnMissingFields.push("Part Number (partNumber)");
-        }
-
-        if (!returnInternalPartNumber) {
-            returnMissingFields.push(
-                "Internal Part Code (internalPartNumber)"
-            );
-        }
-
-        if (returnMissingFields.length > 0) {
-            showError(
-                "❌ Invalid Production QR.<br><br>" +
-                "Missing or invalid:<br>" +
-                returnMissingFields.map(function(field) {
-                    return "• " + escapeHtml(field);
-                }).join("<br>") +
-                "<br><br>QR data received:<br><small>" +
-                escapeHtml(scannedValue) +
-                "</small>"
-            );
+            showError("❌ Invalid QR.<br><br>Expected QR text:<br><b>Production Batch ID: &lt;Batch ID&gt;</b>");
             scanLocked = false;
             return;
         }
 
         showSuccess(
-            "✅ PRODUCTION QR SCANNED<br><br>" +
-            "Batch ID: <b>" +
+            "✅ PRODUCTION BATCH QR SCANNED<br><br>Batch ID: <b>" +
             escapeHtml(returnBatchID) +
-            "</b><br><br>" +
-            "Opening SFG Inspection Return..."
+            "</b><br><br>Looking up SFG details..."
         );
-
         stopScanner();
 
         const inspectionReturnURL =
             appURL +
             "?page=sfginspectionreturn" +
             "&id=" + encodeURIComponent(returnBatchID) +
-            "&customerName=" + encodeURIComponent(returnCustomerName) +
-            "&partNumber=" + encodeURIComponent(returnPartNumber) +
-            "&internalPartNumber=" + encodeURIComponent(returnInternalPartNumber) +
-            (returnActualQty
-                ? "&actualQty=" + encodeURIComponent(returnActualQty)
-                : "") +
-            (returnProductionDate
-                ? "&productionDate=" + encodeURIComponent(returnProductionDate)
-                : "") +
             "&session=" + encodeURIComponent(sessionToken);
 
         setTimeout(function() {
             window.top.location.href = inspectionReturnURL;
-        }, 500);
-
+        }, 400);
         return;
     }
 
