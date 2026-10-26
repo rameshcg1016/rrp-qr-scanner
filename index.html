@@ -2241,8 +2241,33 @@ function onScanSuccess(
     }
 
     if (scanType === "inspectionlog") {
+        // New plain-text production QR format: Production Batch ID: <value>
+        const plainBatchMatch = scannedValue.match(/^\s*Production\s+Batch\s+ID\s*:\s*(.+?)\s*$/im);
+        if (plainBatchMatch) {
+            const productionBatchID = plainBatchMatch[1].trim();
+            if (!productionBatchID) {
+                showError("❌ Production Batch ID is empty.");
+                scanLocked = false;
+                return;
+            }
+
+            showSuccess("✅ PRODUCTION BATCH QR SCANNED<br><br>Batch ID: <b>" +
+                escapeHtml(productionBatchID) +
+                "</b><br><br>Looking up SFG details and opening Line Inspection Log...");
+            stopScanner();
+
+            const inspectionURL = appURL +
+                "?page=inspectionlog" +
+                "&batchId=" + encodeURIComponent(productionBatchID) +
+                "&session=" + encodeURIComponent(sessionToken);
+
+            setTimeout(function() { window.top.location.href = inspectionURL; }, 500);
+            return;
+        }
+
+        // Backward compatibility: continue accepting existing RRP batch URL QR codes.
         if (!scannedURL) {
-            showError("❌ Invalid Batch QR.<br><br>Please scan the existing RRP batch QR URL.");
+            showError("❌ Invalid Batch QR.<br><br>Scan a QR containing 'Production Batch ID: <value>' or an existing RRP batch QR URL.");
             scanLocked = false;
             return;
         }
@@ -2253,9 +2278,8 @@ function onScanSuccess(
         const inspectionPart = scannedURL.searchParams.get("partNumber") || "";
         const inspectionInternalPart = scannedURL.searchParams.get("internalPartNumber") || "";
 
-        if (inspectionQRPage !== "batch" || !inspectionBatchID ||
-            !inspectionCustomer || !inspectionPart || !inspectionInternalPart) {
-            showError("❌ Invalid Batch QR.<br><br>The QR must contain page=batch, id, customerName, partNumber and internalPartNumber.");
+        if (inspectionQRPage !== "batch" || !inspectionBatchID) {
+            showError("❌ Invalid Batch QR.<br><br>Scan a QR containing 'Production Batch ID: <value>' or an existing RRP batch QR URL.");
             scanLocked = false;
             return;
         }
@@ -2263,23 +2287,18 @@ function onScanSuccess(
         showSuccess("✅ BATCH QR SCANNED<br><br>Batch ID: <b>" +
             escapeHtml(inspectionBatchID) +
             "</b><br><br>Opening Line Inspection Log...");
-
         stopScanner();
 
-        const inspectionURL =
-            appURL +
+        const inspectionURL = appURL +
             "?page=inspectionlog" +
             "&batchId=" + encodeURIComponent(inspectionBatchID) +
-            "&customerName=" + encodeURIComponent(inspectionCustomer) +
-            "&partNumber=" + encodeURIComponent(inspectionPart) +
-            "&internalPartNumber=" + encodeURIComponent(inspectionInternalPart) +
+            (inspectionCustomer ? "&customerName=" + encodeURIComponent(inspectionCustomer) : "") +
+            (inspectionPart ? "&partNumber=" + encodeURIComponent(inspectionPart) : "") +
+            (inspectionInternalPart ? "&internalPartNumber=" + encodeURIComponent(inspectionInternalPart) : "") +
             "&sourceQR=" + encodeURIComponent(scannedURL.toString()) +
             "&session=" + encodeURIComponent(sessionToken);
 
-        setTimeout(function() {
-            window.top.location.href = inspectionURL;
-        }, 500);
-
+        setTimeout(function() { window.top.location.href = inspectionURL; }, 500);
         return;
     }
 
