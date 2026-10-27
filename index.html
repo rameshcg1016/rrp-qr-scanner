@@ -2210,7 +2210,7 @@ function onScanSuccess(
     if (scanType === "fg-inward") {
         // FG INWARD QR format is plain text only:
         // Inspection ID: <value>
-        const inspectionMatch = scannedValue.match(/^\\s*Inspection\\s*ID\\s*:\\s*(.+?)\\s*$/im);
+        const inspectionMatch = scannedValue.match(/^\s*Inspection\s*ID\s*:\s*(.+?)\s*$/im);
         const inspectionId = inspectionMatch ? inspectionMatch[1].trim() : "";
 
         if (!inspectionId) {
