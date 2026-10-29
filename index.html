@@ -502,6 +502,9 @@ function showScanMessage() {
         message.innerHTML = "📦 Point the camera at the batch QR containing Inspection ID";
 
     }
+    else if (scanType === "fg-out") {
+        message.innerHTML = "📤 Point the camera at the FG Inspection QR containing Inspection ID";
+    }
 
     else if (
         scanType === "sfginspectionreturn"
@@ -2206,6 +2209,25 @@ function onScanSuccess(
     original id/customerName/partNumber/internalPartNumber.
     Do not modify the original QR payload.
     */
+
+    if (scanType === "fg-out") {
+        // FG OUT QR format: plain text "Inspection ID: <value>"
+        const inspectionMatch = scannedValue.match(/^\s*Inspection\s*ID\s*:\s*(.+?)\s*$/im);
+        const inspectionId = inspectionMatch ? inspectionMatch[1].trim() : "";
+        if (!inspectionId) {
+            showError("❌ Invalid Inspection QR.<br><br>Expected plain text:<br><b>Inspection ID: INS00001</b>");
+            scanLocked = false;
+            return;
+        }
+        showSuccess("✅ INSPECTION QR SCANNED<br><br>Inspection ID: <b>" +
+            escapeHtml(inspectionId) + "</b><br><br>Opening FG Out...");
+        stopScanner();
+        const fgOutURL = appURL + "?page=fg-out" +
+            "&inspectionId=" + encodeURIComponent(inspectionId) +
+            "&session=" + encodeURIComponent(sessionToken);
+        setTimeout(function() { window.top.location.href = fgOutURL; }, 400);
+        return;
+    }
 
     if (scanType === "fg-inward") {
         // FG INWARD QR format is plain text only:
